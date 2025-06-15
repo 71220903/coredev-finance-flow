@@ -37,15 +37,48 @@ export const useAdminControls = () => {
     totalUsers: 0
   });
 
-  // Check if current user is admin
+  // Check if current user is admin with multiple methods
   const checkAdminRole = useCallback(async (): Promise<boolean> => {
-    if (!address || !marketFactory || !isReady) return false;
+    if (!address || !marketFactory || !isReady) {
+      console.log('Admin check failed - missing requirements');
+      return false;
+    }
 
     try {
-      // Assuming there's an admin role check function
-      // For now, we'll check if the user is the owner
-      const owner = await marketFactory.owner();
-      return owner.toLowerCase() === address.toLowerCase();
+      console.log('Checking admin role for:', address);
+
+      // Method 1: Check DEFAULT_ADMIN_ROLE
+      try {
+        const DEFAULT_ADMIN_ROLE = await marketFactory.DEFAULT_ADMIN_ROLE();
+        const hasAdminRole = await marketFactory.hasRole(DEFAULT_ADMIN_ROLE, address);
+        console.log('hasRole(DEFAULT_ADMIN_ROLE):', hasAdminRole);
+        if (hasAdminRole) return true;
+      } catch (error) {
+        console.log('DEFAULT_ADMIN_ROLE check failed:', error);
+      }
+
+      // Method 2: Check owner
+      try {
+        const owner = await marketFactory.owner();
+        const isOwner = owner.toLowerCase() === address.toLowerCase();
+        console.log('owner check:', { owner, address, isOwner });
+        if (isOwner) return true;
+      } catch (error) {
+        console.log('Owner check failed:', error);
+      }
+
+      // Method 3: Check PAUSER_ROLE
+      try {
+        const PAUSER_ROLE = await marketFactory.PAUSER_ROLE();
+        const hasPauserRole = await marketFactory.hasRole(PAUSER_ROLE, address);
+        console.log('hasRole(PAUSER_ROLE):', hasPauserRole);
+        if (hasPauserRole) return true;
+      } catch (error) {
+        console.log('PAUSER_ROLE check failed:', error);
+      }
+
+      console.log('No admin role found for address:', address);
+      return false;
     } catch (error) {
       console.error('Error checking admin role:', error);
       return false;
@@ -75,14 +108,15 @@ export const useAdminControls = () => {
 
     try {
       setLoading(true);
+      console.log('Granting developer role to:', userAddress);
 
       toast({
         title: "Granting Developer Role",
         description: `Granting developer role to ${userAddress.slice(0, 8)}...`
       });
 
-      // Call the contract function to grant developer role
       const tx = await marketFactory.grantDeveloperRole(userAddress);
+      console.log('Grant role transaction:', tx.hash);
       await tx.wait();
 
       toast({
@@ -121,8 +155,19 @@ export const useAdminControls = () => {
 
     try {
       setLoading(true);
+      console.log('Revoking developer role from:', userAddress);
 
-      const tx = await marketFactory.revokeDeveloperRole(userAddress);
+      // Try different method names that might exist in the contract
+      let tx;
+      try {
+        tx = await marketFactory.revokeDeveloperRole(userAddress);
+      } catch (error) {
+        // If revokeDeveloperRole doesn't exist, try revokeRole with DEVELOPER_ROLE
+        const DEVELOPER_ROLE = await marketFactory.DEVELOPER_ROLE();
+        tx = await marketFactory.revokeRole(DEVELOPER_ROLE, userAddress);
+      }
+
+      console.log('Revoke role transaction:', tx.hash);
       await tx.wait();
 
       toast({
@@ -161,12 +206,14 @@ export const useAdminControls = () => {
 
     try {
       setLoading(true);
+      console.log('Toggling platform pause state...');
 
       const isPaused = systemSettings.isPaused;
       const tx = isPaused 
         ? await marketFactory.unpause()
         : await marketFactory.pause();
       
+      console.log('Toggle pause transaction:', tx.hash);
       await tx.wait();
 
       const newState = !isPaused;
@@ -208,10 +255,21 @@ export const useAdminControls = () => {
 
     try {
       setLoading(true);
+      console.log('Updating platform fee to:', newFee);
 
       // Convert percentage to basis points (e.g., 2.5% = 250 basis points)
       const feeInBasisPoints = Math.round(newFee * 100);
-      const tx = await marketFactory.setPlatformFee(feeInBasisPoints);
+      
+      // Try different method names that might exist
+      let tx;
+      try {
+        tx = await marketFactory.setPlatformFee(feeInBasisPoints);
+      } catch (error) {
+        // Try alternative method name
+        tx = await marketFactory.updatePlatformFee(feeInBasisPoints);
+      }
+
+      console.log('Update fee transaction:', tx.hash);
       await tx.wait();
 
       setSystemSettings(prev => ({ ...prev, platformFee: newFee }));
@@ -238,21 +296,32 @@ export const useAdminControls = () => {
 
   // Get system stats
   const fetchSystemStats = useCallback(async () => {
-    if (!marketFactory || !isReady) return;
+    if (!marketFactory || !isReady) {
+      console.log('Cannot fetch stats - contract not ready');
+      return;
+    }
 
     try {
-      // Fetch various system statistics
-      const [isPaused, platformFee, totalMarkets] = await Promise.all([
-        marketFactory.paused().catch(() => false),
-        marketFactory.platformFee().catch(() => 250), // Default 2.5%
-        marketFactory.totalMarkets().catch(() => 0)
+      console.log('Fetching system stats...');
+      
+      // Fetch various system statistics with error handling for each
+      const [isPausedResult, platformFeeResult, totalMarketsResult] = await Promise.allSettled([
+        marketFactory.paused(),
+        marketFactory.platformFee ? marketFactory.platformFee() : Promise.resolve(250),
+        marketFactory.totalMarkets ? marketFactory.totalMarkets() : Promise.resolve(0)
       ]);
+
+      const isPaused = isPausedResult.status === 'fulfilled' ? isPausedResult.value : false;
+      const platformFee = platformFeeResult.status === 'fulfilled' ? Number(platformFeeResult.value) : 250;
+      const totalMarkets = totalMarketsResult.status === 'fulfilled' ? Number(totalMarketsResult.value) : 0;
+
+      console.log('System stats:', { isPaused, platformFee, totalMarkets });
 
       setSystemSettings(prev => ({
         ...prev,
         isPaused,
-        platformFee: Number(platformFee) / 100, // Convert basis points to percentage
-        totalUsers: Number(totalMarkets) * 2 // Mock calculation
+        platformFee: platformFee / 100, // Convert basis points to percentage
+        totalUsers: totalMarkets * 2 // Mock calculation
       }));
 
     } catch (error) {

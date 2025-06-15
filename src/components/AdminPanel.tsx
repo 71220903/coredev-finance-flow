@@ -12,6 +12,8 @@ import { PlatformStats } from "./admin/PlatformStats";
 import { UserManagement } from "./admin/UserManagement";
 import MarketAnalytics from "./MarketAnalytics";
 import { useEnhancedAdminControls } from "@/hooks/useEnhancedAdminControls";
+import { useAdminDetection } from "@/hooks/useAdminDetection";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import { useNotificationSystem } from "@/hooks/useNotificationSystem";
 import {
   Users,
@@ -34,6 +36,10 @@ interface WhitelistUser {
 }
 
 const AdminPanel = () => {
+  // Use admin detection hook
+  useAdminDetection();
+  const { isAdmin } = useUserRole();
+
   // Use the enhanced admin controls hook
   const {
     loading: adminLoading,
@@ -46,8 +52,6 @@ const AdminPanel = () => {
 
   // Use notification system
   const { notifications, unreadCount, markAllAsRead } = useNotificationSystem();
-
-  const [isAdmin, setIsAdmin] = useState(false);
 
   // Mock whitelist users data
   const [whitelistUsers, setWhitelistUsers] = useState<WhitelistUser[]>([
@@ -79,17 +83,13 @@ const AdminPanel = () => {
     pendingApplications: whitelistUsers.filter(u => u.status === "pending").length
   };
 
-  // Check admin role on mount
+  // Fetch platform status when admin is confirmed
   useEffect(() => {
-    const checkRole = async () => {
-      const adminStatus = await checkAdminRole();
-      setIsAdmin(adminStatus);
-      if (adminStatus) {
-        fetchPlatformStatus();
-      }
-    };
-    checkRole();
-  }, [checkAdminRole, fetchPlatformStatus]);
+    if (isAdmin) {
+      console.log('Admin confirmed, fetching platform status...');
+      fetchPlatformStatus();
+    }
+  }, [isAdmin, fetchPlatformStatus]);
 
   const handleApproveUser = async (userId: string) => {
     const user = whitelistUsers.find(u => u.id === userId);
@@ -131,6 +131,8 @@ const AdminPanel = () => {
     }
   };
 
+  console.log('AdminPanel render - isAdmin:', isAdmin);
+
   if (!isAdmin) {
     return (
       <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
@@ -139,6 +141,9 @@ const AdminPanel = () => {
             <Shield className="h-12 w-12 text-slate-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
             <p className="text-slate-600">You need admin privileges to access this panel.</p>
+            <p className="text-sm text-slate-400 mt-2">
+              Make sure your wallet is connected and you have admin role in the MarketFactory contract.
+            </p>
           </CardContent>
         </Card>
       </div>
