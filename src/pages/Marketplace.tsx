@@ -12,6 +12,7 @@ import {
   Plus
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { WalletConnect } from "@/components/WalletConnect";
 
 const Marketplace = () => {
   const [searchFilters, setSearchFilters] = useState<any>({});
@@ -189,6 +190,7 @@ const Marketplace = () => {
               <Link to="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors">
                 Dashboard
               </Link>
+              <WalletConnect />
               <CreateMarketModal 
                 trigger={
                   <Button>

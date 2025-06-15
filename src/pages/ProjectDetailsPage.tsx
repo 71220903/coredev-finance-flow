@@ -1,10 +1,10 @@
-
 import ProjectDataRoom from "@/components/ProjectDataRoom";
 import TrustScoreWidget from "@/components/TrustScoreWidget";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Github, User } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { WalletConnect } from "@/components/WalletConnect";
 
 const ProjectDetailsPage = () => {
   const { projectId } = useParams();
@@ -44,6 +44,7 @@ const ProjectDetailsPage = () => {
               <Link to="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors">
                 Dashboard
               </Link>
+              <WalletConnect />
             </div>
           </div>
         </div>

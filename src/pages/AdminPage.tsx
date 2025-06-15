@@ -1,4 +1,3 @@
-
 import AdminPanel from "@/components/AdminPanel";
 import MobileNavigation from "@/components/MobileNavigation";
 import AdvancedSearch from "@/components/AdvancedSearch";
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { WalletConnect } from "@/components/WalletConnect";
 
 const AdminPage = () => {
   const handleFiltersChange = (filters: any) => {
@@ -41,6 +41,7 @@ const AdminPage = () => {
               <Link to="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors">
                 Dashboard
               </Link>
+              <WalletConnect />
             </div>
           </div>
         </div>
