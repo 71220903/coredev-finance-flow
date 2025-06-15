@@ -17,7 +17,8 @@ import {
   BarChart,
   ShieldCheck,
   Lock,
-  Unlock
+  Unlock,
+  BarChart3
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AchievementsWidget from "@/components/AchievementsWidget";
@@ -74,6 +75,9 @@ const Dashboard = () => {
             <div className="flex items-center space-x-4">
               <Link to="/marketplace" className="text-slate-600 hover:text-slate-900 transition-colors">
                 Marketplace
+              </Link>
+              <Link to="/analytics" className="text-slate-600 hover:text-slate-900 transition-colors">
+                Analytics
               </Link>
               <Button>Create Market</Button>
             </div>
@@ -143,9 +147,11 @@ const Dashboard = () => {
                   <FileText className="h-4 w-4 mr-2" />
                   Manage Existing Markets
                 </Button>
-                <Button variant="secondary" className="w-full justify-start">
-                  <Users className="h-4 w-4 mr-2" />
-                  Invite Collaborators
+                <Button variant="secondary" className="w-full justify-start" asChild>
+                  <Link to="/analytics">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    View Analytics
+                  </Link>
                 </Button>
                 <Button variant="ghost" className="w-full justify-start">
                   <ExternalLink className="h-4 w-4 mr-2" />
