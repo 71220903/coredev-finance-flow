@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import MarketAnalytics from "./MarketAnalytics";
+import { useAdminControls } from "@/hooks/useAdminControls";
+import { useNotificationSystem } from "@/hooks/useNotificationSystem";
 import {
   Settings,
   Users,
@@ -27,7 +29,9 @@ import {
   Database,
   Key,
   Globe,
-  Zap
+  Zap,
+  Play,
+  Pause
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,32 +46,31 @@ interface WhitelistUser {
   reason?: string;
 }
 
-interface PlatformStats {
-  totalUsers: number;
-  activeLoans: number;
-  totalVolume: number;
-  successRate: number;
-  pendingApplications: number;
-}
-
 const AdminPanel = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [newUserAddress, setNewUserAddress] = useState("");
-  const [systemSettings, setSystemSettings] = useState({
-    platformFee: 2.0,
-    minLoanAmount: 1000,
-    maxLoanAmount: 100000,
-    defaultInterestRate: 12.0,
-    maxLoanTerm: 24,
-    autoApprovalThreshold: 85,
-    maintenanceMode: false,
-    newRegistrations: true,
-    emailNotifications: true,
-    slackIntegration: false
-  });
+  const [platformFeeInput, setPlatformFeeInput] = useState("");
 
+  // Use the new admin controls hook
+  const {
+    systemSettings,
+    loading: adminLoading,
+    grantDeveloperRole,
+    revokeDeveloperRole,
+    togglePlatformPause,
+    updatePlatformFee,
+    checkAdminRole,
+    fetchSystemStats
+  } = useAdminControls();
+
+  // Use notification system
+  const { notifications, unreadCount, markAllAsRead } = useNotificationSystem();
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Mock whitelist users data (would be fetched from backend in production)
   const [whitelistUsers, setWhitelistUsers] = useState<WhitelistUser[]>([
     {
       id: "1",
@@ -86,45 +89,57 @@ const AdminPanel = () => {
       requestedDate: "2024-01-10",
       reviewedBy: "admin",
       reason: "High trust score and verified GitHub"
-    },
-    {
-      id: "3",
-      address: "0x9999...1111",
-      githubHandle: "@suspicious_user",
-      trustScore: 25,
-      status: "rejected",
-      requestedDate: "2024-01-12",
-      reviewedBy: "admin",
-      reason: "Low trust score and unverified profile"
     }
   ]);
 
-  const platformStats: PlatformStats = {
-    totalUsers: 1247,
+  const platformStats = {
+    totalUsers: systemSettings.totalUsers,
     activeLoans: 23,
     totalVolume: 2850000,
     successRate: 94.2,
     pendingApplications: whitelistUsers.filter(u => u.status === "pending").length
   };
 
-  const handleApproveUser = (userId: string) => {
-    setWhitelistUsers(prev => prev.map(user => 
-      user.id === userId 
-        ? { ...user, status: "approved" as const, reviewedBy: "admin", reason: "Approved by admin" }
-        : user
-    ));
-    
-    toast({
-      title: "User Approved ✅",
-      description: "User has been added to the whitelist and can now access the platform."
-    });
+  // Check admin role on mount
+  useEffect(() => {
+    const checkRole = async () => {
+      const adminStatus = await checkAdminRole();
+      setIsAdmin(adminStatus);
+      if (adminStatus) {
+        fetchSystemStats();
+      }
+    };
+    checkRole();
+  }, [checkAdminRole, fetchSystemStats]);
+
+  // Initialize platform fee input
+  useEffect(() => {
+    setPlatformFeeInput(systemSettings.platformFee.toString());
+  }, [systemSettings.platformFee]);
+
+  const handleApproveUser = async (userId: string) => {
+    const user = whitelistUsers.find(u => u.id === userId);
+    if (!user) return;
+
+    const success = await grantDeveloperRole(user.address);
+    if (success) {
+      setWhitelistUsers(prev => prev.map(u => 
+        u.id === userId 
+          ? { ...u, status: "approved" as const, reviewedBy: "admin", reason: "Approved by admin" }
+          : u
+      ));
+    }
   };
 
-  const handleRejectUser = (userId: string, reason: string) => {
-    setWhitelistUsers(prev => prev.map(user => 
-      user.id === userId 
-        ? { ...user, status: "rejected" as const, reviewedBy: "admin", reason }
-        : user
+  const handleRejectUser = async (userId: string, reason: string) => {
+    const user = whitelistUsers.find(u => u.id === userId);
+    if (!user) return;
+
+    // In a real implementation, you might want to call a reject function
+    setWhitelistUsers(prev => prev.map(u => 
+      u.id === userId 
+        ? { ...u, status: "rejected" as const, reviewedBy: "admin", reason }
+        : u
     ));
     
     toast({
@@ -133,27 +148,43 @@ const AdminPanel = () => {
     });
   };
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (newUserAddress.trim()) {
-      const newUser: WhitelistUser = {
-        id: Date.now().toString(),
-        address: newUserAddress,
-        githubHandle: "@manual_add",
-        trustScore: 75,
-        status: "approved",
-        requestedDate: new Date().toISOString().split('T')[0],
-        reviewedBy: "admin",
-        reason: "Manually added by admin"
-      };
-      
-      setWhitelistUsers(prev => [newUser, ...prev]);
-      setNewUserAddress("");
-      
-      toast({
-        title: "User Added ✅",
-        description: "User has been manually added to the whitelist."
-      });
+      const success = await grantDeveloperRole(newUserAddress);
+      if (success) {
+        const newUser: WhitelistUser = {
+          id: Date.now().toString(),
+          address: newUserAddress,
+          githubHandle: "@manual_add",
+          trustScore: 75,
+          status: "approved",
+          requestedDate: new Date().toISOString().split('T')[0],
+          reviewedBy: "admin",
+          reason: "Manually added by admin"
+        };
+        
+        setWhitelistUsers(prev => [newUser, ...prev]);
+        setNewUserAddress("");
+      }
     }
+  };
+
+  const handleTogglePause = async () => {
+    await togglePlatformPause();
+  };
+
+  const handleUpdatePlatformFee = async () => {
+    const newFee = parseFloat(platformFeeInput);
+    if (isNaN(newFee) || newFee < 0 || newFee > 10) {
+      toast({
+        title: "Invalid Fee",
+        description: "Platform fee must be between 0% and 10%",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    await updatePlatformFee(newFee);
   };
 
   const filteredUsers = whitelistUsers.filter(user => {
@@ -181,36 +212,53 @@ const AdminPanel = () => {
     }
   };
 
-  const updateSystemSetting = (key: string, value: any) => {
-    setSystemSettings(prev => ({ ...prev, [key]: value }));
-    toast({
-      title: "Setting Updated ⚙️",
-      description: `${key.replace(/([A-Z])/g, ' $1')} has been updated successfully.`
-    });
-  };
-
-  const sendBulkNotification = () => {
-    toast({
-      title: "Notification Sent 📢",
-      description: "Bulk notification has been sent to all users."
-    });
-  };
-
-  const exportData = (type: string) => {
-    toast({
-      title: "Export Started 📊",
-      description: `${type} data export has been initiated. You'll receive an email when complete.`
-    });
-  };
+  if (!isAdmin) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Shield className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+            <p className="text-slate-600">You need admin privileges to access this panel.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
       {/* Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Settings className="h-5 w-5 text-blue-600" />
-            <span>Advanced Admin Panel</span>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Settings className="h-5 w-5 text-blue-600" />
+              <span>Advanced Admin Panel</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Badge variant={systemSettings.isPaused ? "destructive" : "default"}>
+                {systemSettings.isPaused ? "PAUSED" : "ACTIVE"}
+              </Badge>
+              <Button
+                variant={systemSettings.isPaused ? "default" : "destructive"}
+                size="sm"
+                onClick={handleTogglePause}
+                disabled={adminLoading}
+              >
+                {systemSettings.isPaused ? (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Resume Platform
+                  </>
+                ) : (
+                  <>
+                    <Pause className="h-4 w-4 mr-2" />
+                    Pause Platform
+                  </>
+                )}
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
       </Card>
@@ -260,10 +308,10 @@ const AdminPanel = () => {
         <Card className="transition-all duration-300 hover:scale-105 hover:shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <span className="text-sm text-slate-600">Pending</span>
+              <Bell className="h-4 w-4 text-red-600" />
+              <span className="text-sm text-slate-600">Notifications</span>
             </div>
-            <div className="text-2xl font-bold">{platformStats.pendingApplications}</div>
+            <div className="text-2xl font-bold">{unreadCount}</div>
           </CardContent>
         </Card>
       </div>
@@ -282,7 +330,7 @@ const AdminPanel = () => {
         <TabsContent value="whitelist" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Whitelist Management</CardTitle>
+              <CardTitle>Developer Role Management</CardTitle>
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -317,9 +365,12 @@ const AdminPanel = () => {
                   onChange={(e) => setNewUserAddress(e.target.value)}
                   className="flex-1"
                 />
-                <Button onClick={handleAddUser} disabled={!newUserAddress.trim()}>
+                <Button 
+                  onClick={handleAddUser} 
+                  disabled={!newUserAddress.trim() || adminLoading}
+                >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add User
+                  Grant Developer Role
                 </Button>
               </div>
 
@@ -349,27 +400,41 @@ const AdminPanel = () => {
                         )}
                       </div>
                       
-                      {user.status === "pending" && (
-                        <div className="flex space-x-2">
+                      <div className="flex space-x-2">
+                        {user.status === "pending" ? (
+                          <>
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleApproveUser(user.id)}
+                              disabled={adminLoading}
+                              className="transition-all duration-200 hover:scale-105"
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Approve
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleRejectUser(user.id, "Rejected by admin review")}
+                              disabled={adminLoading}
+                              className="transition-all duration-200 hover:scale-105"
+                            >
+                              <XCircle className="h-3 w-3 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        ) : user.status === "approved" && (
                           <Button 
                             size="sm" 
-                            onClick={() => handleApproveUser(user.id)}
-                            className="transition-all duration-200 hover:scale-105"
+                            variant="destructive"
+                            onClick={() => revokeDeveloperRole(user.address)}
+                            disabled={adminLoading}
                           >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Approve
+                            <Ban className="h-3 w-3 mr-1" />
+                            Revoke
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleRejectUser(user.id, "Rejected by admin review")}
-                            className="transition-all duration-200 hover:scale-105"
-                          >
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Reject
-                          </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -419,7 +484,7 @@ const AdminPanel = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <h3 className="font-medium">Recent Loan Applications</h3>
-                  <Button size="sm" onClick={() => exportData("loans")}>
+                  <Button size="sm">
                     Export Data
                   </Button>
                 </div>
@@ -448,42 +513,58 @@ const AdminPanel = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Platform Fee (%)</Label>
-                  <Input
-                    type="number"
-                    value={systemSettings.platformFee}
-                    onChange={(e) => updateSystemSetting('platformFee', parseFloat(e.target.value))}
-                    step="0.1"
-                    min="0"
-                    max="10"
-                  />
+                  <div className="flex space-x-2">
+                    <Input
+                      type="number"
+                      value={platformFeeInput}
+                      onChange={(e) => setPlatformFeeInput(e.target.value)}
+                      step="0.1"
+                      min="0"
+                      max="10"
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={handleUpdatePlatformFee}
+                      disabled={adminLoading || platformFeeInput === systemSettings.platformFee.toString()}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                  <p className="text-sm text-slate-600">Current: {systemSettings.platformFee}%</p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Minimum Loan Amount ($)</Label>
-                  <Input
-                    type="number"
-                    value={systemSettings.minLoanAmount}
-                    onChange={(e) => updateSystemSetting('minLoanAmount', parseInt(e.target.value))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Maximum Loan Amount ($)</Label>
-                  <Input
-                    type="number"
-                    value={systemSettings.maxLoanAmount}
-                    onChange={(e) => updateSystemSetting('maxLoanAmount', parseInt(e.target.value))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Default Interest Rate (%)</Label>
-                  <Input
-                    type="number"
-                    value={systemSettings.defaultInterestRate}
-                    onChange={(e) => updateSystemSetting('defaultInterestRate', parseFloat(e.target.value))}
-                    step="0.1"
-                  />
+                  <Label>Platform Status</Label>
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">
+                        {systemSettings.isPaused ? "Platform Paused" : "Platform Active"}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        {systemSettings.isPaused 
+                          ? "All operations are disabled" 
+                          : "All operations are enabled"
+                        }
+                      </p>
+                    </div>
+                    <Button
+                      variant={systemSettings.isPaused ? "default" : "destructive"}
+                      onClick={handleTogglePause}
+                      disabled={adminLoading}
+                    >
+                      {systemSettings.isPaused ? (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Resume
+                        </>
+                      ) : (
+                        <>
+                          <Pause className="h-4 w-4 mr-2" />
+                          Pause
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -500,10 +581,10 @@ const AdminPanel = () => {
                   <Label>Auto-Approval Trust Threshold</Label>
                   <Input
                     type="number"
-                    value={systemSettings.autoApprovalThreshold}
-                    onChange={(e) => updateSystemSetting('autoApprovalThreshold', parseInt(e.target.value))}
+                    value={85}
                     min="0"
                     max="100"
+                    disabled
                   />
                 </div>
 
@@ -513,8 +594,8 @@ const AdminPanel = () => {
                     <p className="text-sm text-slate-600">Disable platform access for maintenance</p>
                   </div>
                   <Switch
-                    checked={systemSettings.maintenanceMode}
-                    onCheckedChange={(checked) => updateSystemSetting('maintenanceMode', checked)}
+                    checked={false}
+                    disabled
                   />
                 </div>
 
@@ -524,8 +605,8 @@ const AdminPanel = () => {
                     <p className="text-sm text-slate-600">Allow new users to register</p>
                   </div>
                   <Switch
-                    checked={systemSettings.newRegistrations}
-                    onCheckedChange={(checked) => updateSystemSetting('newRegistrations', checked)}
+                    checked={true}
+                    disabled
                   />
                 </div>
               </CardContent>
@@ -536,156 +617,93 @@ const AdminPanel = () => {
         <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Bell className="h-4 w-4" />
-                <span>Notification Management</span>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Bell className="h-4 w-4" />
+                  <span>System Notifications</span>
+                </div>
+                <Button onClick={markAllAsRead} variant="outline" size="sm">
+                  Mark All Read
+                </Button>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="font-medium">Send Bulk Notification</h3>
-                  <div className="space-y-2">
-                    <Label>Message Title</Label>
-                    <Input placeholder="Enter notification title..." />
+            <CardContent>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500">
+                    No notifications yet
                   </div>
-                  <div className="space-y-2">
-                    <Label>Message Content</Label>
-                    <Textarea placeholder="Enter notification message..." rows={4} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Target Audience</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select audience" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Users</SelectItem>
-                        <SelectItem value="borrowers">Borrowers Only</SelectItem>
-                        <SelectItem value="lenders">Lenders Only</SelectItem>
-                        <SelectItem value="high-trust">High Trust Users</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button onClick={sendBulkNotification} className="w-full">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Notification
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-medium">Notification Settings</h3>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <Label>Email Notifications</Label>
-                    <Switch
-                      checked={systemSettings.emailNotifications}
-                      onCheckedChange={(checked) => updateSystemSetting('emailNotifications', checked)}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <Label>Slack Integration</Label>
-                    <Switch
-                      checked={systemSettings.slackIntegration}
-                      onCheckedChange={(checked) => updateSystemSetting('slackIntegration', checked)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Notification Templates</Label>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Template
-                    </Button>
-                  </div>
-                </div>
+                ) : (
+                  notifications.slice(0, 20).map((notification) => (
+                    <div 
+                      key={notification.id}
+                      className={`p-3 border rounded-lg ${notification.read ? 'opacity-60' : 'border-blue-200 bg-blue-50'}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm">{notification.title}</h4>
+                          <p className="text-sm text-slate-600 mt-1">{notification.description}</p>
+                          <p className="text-xs text-slate-400 mt-2">
+                            {new Date(notification.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                        <Badge variant={
+                          notification.type === 'error' ? 'destructive' :
+                          notification.type === 'warning' ? 'secondary' :
+                          notification.type === 'success' ? 'default' : 'outline'
+                        }>
+                          {notification.type}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="system" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Database className="h-4 w-4" />
-                  <span>Data Management</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => exportData("users")}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Export User Data
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => exportData("transactions")}
-                >
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Export Transaction Data
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => exportData("analytics")}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Export Analytics Data
-                </Button>
+          <Card>
+            <CardHeader>
+              <CardTitle>System Management</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                disabled
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Export User Data
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                disabled
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Export Transaction Data
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                disabled
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Export Analytics Data
+              </Button>
 
-                <div className="pt-4 border-t">
-                  <Button variant="destructive" className="w-full">
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    Emergency Stop
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Key className="h-4 w-4" />
-                  <span>API & Integrations</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>API Rate Limiting</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select rate limit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="100">100 requests/hour</SelectItem>
-                      <SelectItem value="500">500 requests/hour</SelectItem>
-                      <SelectItem value="1000">1000 requests/hour</SelectItem>
-                      <SelectItem value="unlimited">Unlimited</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button variant="outline" className="w-full justify-start">
-                  <Globe className="h-4 w-4 mr-2" />
-                  Webhook Configuration
+              <div className="pt-4 border-t">
+                <Button variant="destructive" className="w-full" disabled>
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Emergency Stop
                 </Button>
-
-                <Button variant="outline" className="w-full justify-start">
-                  <Zap className="h-4 w-4 mr-2" />
-                  API Key Management
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
