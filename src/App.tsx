@@ -34,9 +34,9 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <UserRoleProvider>
-          <Toaster />
-          <BrowserRouter>
+        <BrowserRouter>
+          <UserRoleProvider>
+            <Toaster />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/marketplace" element={<Marketplace />} />
@@ -52,12 +52,11 @@ function App() {
               <Route path="/help-support" element={<HelpSupportPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </UserRoleProvider>
+          </UserRoleProvider>
+        </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>
   );
 }
 
 export default App;
-
