@@ -7,13 +7,13 @@ export const CONTRACTS = {
 } as const;
 
 export const CORE_TESTNET_CONFIG = {
-  chainId: 1115,
+  chainId: 1114,
   chainName: "Core Blockchain Testnet",
-  rpcUrl: "https://rpc.test.btcs.network",
-  blockExplorer: "https://scan.test.btcs.network",
+  rpcUrl: "https://rpc.test2.btcs.network",
+  blockExplorer: "https://scan.test2.btcs.network",
   nativeCurrency: {
     name: "Test Core",
-    symbol: "tCORE", 
+    symbol: "tCORE2", 
     decimals: 18
   }
 };

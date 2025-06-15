@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -33,7 +32,7 @@ export const WalletConnect = () => {
 
   const openExplorer = () => {
     if (address) {
-      window.open(`https://scan.test.btcs.network/address/${address}`, '_blank');
+      window.open(`https://scan.test2.btcs.network/address/${address}`, '_blank');
     }
   };
 
@@ -118,7 +117,7 @@ export const WalletConnect = () => {
               <label className="text-sm font-medium text-slate-600">Balance</label>
               <div className="flex items-center justify-between mt-1">
                 <span className="text-lg font-semibold">
-                  {parseFloat(balance).toFixed(4)} tCORE
+                  {parseFloat(balance).toFixed(4)} tCORE2
                 </span>
                 <Badge variant={isOnCorrectNetwork ? "default" : "destructive"}>
                   {isOnCorrectNetwork ? "Core Testnet" : "Wrong Network"}
