@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Users, TrendingUp, Shield, Code2, Github, DollarSign, Wallet, Star, CheckCircle, Play, ChevronLeft, ChevronRight, Zap, Cpu, Globe, Database, Network, Bitcoin } from "lucide-react";
+import { ArrowRight, Users, TrendingUp, Shield, Code2, Github, DollarSign, Wallet, Star, CheckCircle, Play, ChevronLeft, ChevronRight, Zap, Cpu, Globe, Database, Network, Bitcoin, Heart, Lightbulb, Rocket } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { WalletConnect } from "@/components/WalletConnect";
 import { UserModeSwitch } from "@/components/UserModeSwitch";
@@ -158,7 +158,7 @@ const Index = () => {
               
               {/* Main Heading */}
               <div className="space-y-8">
-                <h1 className="text-7xl lg:text-8xl font-black leading-tight">
+                <h1 className="text-5xl lg:text-6xl font-black leading-tight">
                   <span className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent">
                     Decentralized
                   </span>
@@ -172,7 +172,7 @@ const Index = () => {
                 <div className="relative">
                   <div className="absolute -left-6 top-0 w-2 h-full bg-gradient-to-b from-blue-500 via-purple-500 to-cyan-500 rounded-full animate-pulse"></div>
                   <p className="text-3xl font-bold text-gray-200 pl-8">
-                    Powered by <span className="text-blue-400">Blockchain</span> • Built for the <span className="text-purple-400">Future</span>
+                    <span className="text-blue-400">For developer</span> • <span className="text-purple-400">by developer</span>
                   </p>
                 </div>
               </div>
@@ -343,6 +343,150 @@ const Index = () => {
                       <div className="font-black text-xl">$50M+</div>
                       <div className="text-sm opacity-90">TVL Secured</div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Developers Section */}
+      <section className="relative py-32 bg-gradient-to-br from-gray-900/95 via-blue-900/95 to-purple-900/95 backdrop-blur-xl border-y border-blue-500/20">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(-45deg,rgba(147,51,234,0.1)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-6 lg:px-8 z-10">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500/30 px-8 py-4 rounded-full backdrop-blur-sm mb-8">
+              <Heart className="h-6 w-6 text-red-400 mr-3 animate-pulse" />
+              <span className="text-xl font-bold bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
+                Why Developers Matter
+              </span>
+            </div>
+            <h2 className="text-5xl md:text-6xl font-black text-white mb-8">
+              Developers Are The 
+              <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent"> Backbone</span>
+              <br />of Tomorrow's Ecosystem
+            </h2>
+            <p className="text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
+              We created this platform because we believe developers are the architects of our digital future. 
+              When developers are properly supported and facilitated, they create innovations that transform entire ecosystems.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Left Side - Content */}
+            <div className="space-y-12">
+              <div className="space-y-8">
+                <div className="flex items-start space-x-6 group">
+                  <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 p-4 rounded-2xl border border-blue-500/30 group-hover:scale-110 transition-all duration-500">
+                    <Lightbulb className="h-8 w-8 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-3">Innovation Drivers</h3>
+                    <p className="text-gray-300 text-lg leading-relaxed">
+                      Developers transform ideas into reality. They build the infrastructure, applications, 
+                      and systems that power our digital world. Every breakthrough starts with a developer's vision.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-6 group">
+                  <div className="bg-gradient-to-r from-purple-500/20 to-cyan-500/20 p-4 rounded-2xl border border-purple-500/30 group-hover:scale-110 transition-all duration-500">
+                    <Rocket className="h-8 w-8 text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-3">Ecosystem Builders</h3>
+                    <p className="text-gray-300 text-lg leading-relaxed">
+                      Well-supported developers create robust, scalable solutions. When they have access to proper funding 
+                      and resources, they can focus on building revolutionary technologies that benefit everyone.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-6 group">
+                  <div className="bg-gradient-to-r from-cyan-500/20 to-green-500/20 p-4 rounded-2xl border border-cyan-500/30 group-hover:scale-110 transition-all duration-500">
+                    <Globe className="h-8 w-8 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-3">Future Shapers</h3>
+                    <p className="text-gray-300 text-lg leading-relaxed">
+                      The projects developers create today become the foundation for tomorrow's innovations. 
+                      By empowering developers now, we're investing in a more promising digital future for all.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/20 rounded-3xl p-8 backdrop-blur-sm">
+                <div className="flex items-center space-x-4 mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                    <Code2 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-white">Our Mission</h4>
+                    <p className="text-blue-300">Empowering the next generation</p>
+                  </div>
+                </div>
+                <p className="text-gray-200 text-lg leading-relaxed">
+                  "We believe that by providing developers with decentralized financial tools, 
+                  we're not just solving funding problems – we're catalyzing the next wave of technological innovation 
+                  that will shape our collective future."
+                </p>
+              </div>
+            </div>
+
+            {/* Right Side - Visual */}
+            <div className="relative">
+              <div className="relative bg-gradient-to-br from-blue-900/50 to-purple-900/50 rounded-3xl p-12 backdrop-blur-xl border border-blue-500/30 shadow-2xl shadow-blue-500/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 rounded-3xl animate-pulse"></div>
+                
+                <div className="relative z-10 text-center space-y-8">
+                  <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 via-purple-500 to-cyan-500 rounded-full flex items-center justify-center relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-cyan-500 rounded-full animate-pulse opacity-75"></div>
+                    <Code2 className="h-16 w-16 text-white relative z-10" />
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <h3 className="text-4xl font-black text-white">10,000+</h3>
+                    <p className="text-xl text-gray-300">Developers Empowered</p>
+                    <div className="flex justify-center space-x-8 pt-6">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-400">500+</div>
+                        <div className="text-sm text-gray-400">Projects Funded</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-400">$50M+</div>
+                        <div className="text-sm text-gray-400">Capital Deployed</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-cyan-400">99.7%</div>
+                        <div className="text-sm text-gray-400">Success Rate</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating elements */}
+              <div className="absolute -top-8 -left-8 bg-gradient-to-r from-green-500 to-emerald-500 text-white p-6 rounded-2xl shadow-xl transform rotate-12 hover:rotate-0 transition-transform duration-500">
+                <div className="flex items-center space-x-3">
+                  <Shield className="h-8 w-8" />
+                  <div>
+                    <div className="font-bold text-lg">Secured</div>
+                    <div className="text-sm opacity-90">Smart Contracts</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute -bottom-8 -right-8 bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-6 rounded-2xl shadow-xl transform -rotate-12 hover:rotate-0 transition-transform duration-500">
+                <div className="flex items-center space-x-3">
+                  <Zap className="h-8 w-8" />
+                  <div>
+                    <div className="font-bold text-lg">Lightning</div>
+                    <div className="text-sm opacity-90">Fast Funding</div>
                   </div>
                 </div>
               </div>
