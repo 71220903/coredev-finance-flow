@@ -17,6 +17,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { UserRoleProvider } from "@/contexts/UserRoleContext";
 import { ErrorBoundary } from "@/components/error/ErrorBoundary";
+import { RouterErrorBoundary } from "@/components/navigation/RouterErrorBoundary";
 
 // Create a client instance with optimized settings
 const queryClient = new QueryClient({
@@ -35,24 +36,26 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <UserRoleProvider>
-            <Toaster />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/marketplace" element={<Marketplace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/developer/:developerId" element={<DeveloperProfilePage />} />
-              <Route path="/project/:projectId" element={<ProjectDetailsPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
-              <Route path="/achievements" element={<AchievementsPage />} />
-              <Route path="/bookmarks" element={<BookmarksPage />} />
-              <Route path="/history" element={<HistoryPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/help-support" element={<HelpSupportPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </UserRoleProvider>
+          <RouterErrorBoundary>
+            <UserRoleProvider>
+              <Toaster />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/developer/:developerId" element={<DeveloperProfilePage />} />
+                <Route path="/project/:projectId" element={<ProjectDetailsPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/achievements" element={<AchievementsPage />} />
+                <Route path="/bookmarks" element={<BookmarksPage />} />
+                <Route path="/history" element={<HistoryPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/help-support" element={<HelpSupportPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </UserRoleProvider>
+          </RouterErrorBoundary>
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>

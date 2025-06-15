@@ -1,11 +1,11 @@
 
-import { ReactNode } from "react";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { ReactNode, useEffect, useState } from "react";
+import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import { useLocation } from "react-router-dom";
 import NavigationHeader from "./NavigationHeader";
 import NavigationBreadcrumb from "./NavigationBreadcrumb";
 import NavigationSidebar from "./NavigationSidebar";
 import EnhancedMobileNavigation from "./EnhancedMobileNavigation";
-import { useSidebar } from "@/components/ui/sidebar";
 
 interface BreadcrumbItem {
   label: string;
@@ -27,7 +27,39 @@ const AppLayoutContent = ({
   pageTitle,
   pageDescription 
 }: AppLayoutProps) => {
-  const { toggleSidebar } = useSidebar();
+  const location = useLocation();
+  const [isClient, setIsClient] = useState(false);
+  
+  // Ensure we're on the client side to prevent SSR issues
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  // Safety check for sidebar context
+  let toggleSidebar;
+  try {
+    const sidebarContext = useSidebar();
+    toggleSidebar = sidebarContext?.toggleSidebar;
+  } catch (error) {
+    console.warn('Sidebar context not available:', error);
+    toggleSidebar = () => {};
+  }
+
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex w-full bg-slate-50">
+        <div className="flex-1 flex flex-col">
+          <div className="h-16 bg-white border-b border-slate-200"></div>
+          <main className="flex-1 p-8">
+            <div className="animate-pulse">
+              <div className="h-4 bg-slate-200 rounded w-1/4 mb-4"></div>
+              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex w-full bg-slate-50">

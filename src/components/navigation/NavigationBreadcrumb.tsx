@@ -1,4 +1,5 @@
 
+import { useMemo } from "react";
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -24,8 +25,11 @@ interface NavigationBreadcrumbProps {
 const NavigationBreadcrumb = ({ items, maxItems = 4 }: NavigationBreadcrumbProps) => {
   const location = useLocation();
   
-  // Auto-generate breadcrumbs from route if no items provided
-  const generateBreadcrumbs = (): BreadcrumbItem[] => {
+  // Memoize breadcrumb generation to prevent infinite re-renders
+  const breadcrumbItems = useMemo(() => {
+    if (items) return items;
+    
+    // Auto-generate breadcrumbs from route
     const pathSegments = location.pathname.split('/').filter(Boolean);
     const breadcrumbs: BreadcrumbItem[] = [{ label: "Home", href: "/" }];
     
@@ -57,18 +61,18 @@ const NavigationBreadcrumb = ({ items, maxItems = 4 }: NavigationBreadcrumbProps
     });
     
     return breadcrumbs;
-  };
-
-  const breadcrumbItems = items || generateBreadcrumbs();
+  }, [location.pathname, items]);
   
-  // Handle overflow with ellipsis
-  const displayItems = breadcrumbItems.length > maxItems 
-    ? [
-        breadcrumbItems[0],
-        { label: "...", href: undefined },
-        ...breadcrumbItems.slice(-2)
-      ]
-    : breadcrumbItems;
+  // Memoize display items to prevent unnecessary re-calculations  
+  const displayItems = useMemo(() => {
+    return breadcrumbItems.length > maxItems 
+      ? [
+          breadcrumbItems[0],
+          { label: "...", href: undefined },
+          ...breadcrumbItems.slice(-2)
+        ]
+      : breadcrumbItems;
+  }, [breadcrumbItems, maxItems]);
 
   if (breadcrumbItems.length <= 1) {
     return null; // Don't show breadcrumb on home page
@@ -80,7 +84,7 @@ const NavigationBreadcrumb = ({ items, maxItems = 4 }: NavigationBreadcrumbProps
         <Breadcrumb>
           <BreadcrumbList>
             {displayItems.map((item, index) => (
-              <div key={index} className="flex items-center">
+              <div key={`${item.label}-${index}`} className="flex items-center">
                 <BreadcrumbItem>
                   {item.label === "..." ? (
                     <BreadcrumbEllipsis />
