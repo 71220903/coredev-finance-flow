@@ -1,3 +1,4 @@
+
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Marketplace from "@/pages/Marketplace";
@@ -5,14 +6,17 @@ import Dashboard from "@/pages/Dashboard";
 import DeveloperProfilePage from "@/pages/DeveloperProfilePage";
 import ProjectDetailsPage from "@/pages/ProjectDetailsPage";
 import NotFound from "@/pages/NotFound";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminPage from "@/pages/AdminPage";
 
+// Create a client instance
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <Toaster />
       <BrowserRouter>
         <Routes>
@@ -26,7 +30,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
