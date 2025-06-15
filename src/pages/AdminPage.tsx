@@ -1,14 +1,12 @@
+
 import AdminPanel from "@/components/AdminPanel";
-import MobileNavigation from "@/components/MobileNavigation";
 import AdvancedSearch from "@/components/AdvancedSearch";
 import NotificationCenter from "@/components/NotificationCenter";
 import SecondaryMarket from "@/components/SecondaryMarket";
 import PerformanceOptimizer from "@/components/PerformanceOptimizer";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
-import { WalletConnect } from "@/components/WalletConnect";
+import { Shield, Search, Bell, TrendingUp, Zap } from "lucide-react";
+import AppLayout from "@/components/navigation/AppLayout";
 
 const AdminPage = () => {
   const handleFiltersChange = (filters: any) => {
@@ -19,45 +17,44 @@ const AdminPage = () => {
     console.log("Filters reset");
   };
 
+  const breadcrumbItems = [
+    { label: "Admin Panel" }
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Desktop Navigation */}
-      <nav className="hidden lg:block bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">CD</span>
-              </div>
-              <span className="text-xl font-bold text-slate-900">CoreDev Zero</span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" asChild>
-                <Link to="/marketplace">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Marketplace
-                </Link>
-              </Button>
-              <Link to="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Dashboard
-              </Link>
-              <WalletConnect />
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Mobile Navigation */}
-      <MobileNavigation />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 lg:pb-8">
+    <AppLayout
+      breadcrumbItems={breadcrumbItems}
+      pageTitle="Admin Panel"
+      pageDescription="Comprehensive administration tools for the CoreDev Zero platform"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="panel" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="panel">Admin Panel</TabsTrigger>
-            <TabsTrigger value="search">Advanced Search</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="market">Secondary Market</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 bg-white border border-slate-200">
+            <TabsTrigger value="panel" className="flex items-center space-x-2">
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Admin Panel</span>
+              <span className="sm:hidden">Panel</span>
+            </TabsTrigger>
+            <TabsTrigger value="search" className="flex items-center space-x-2">
+              <Search className="h-4 w-4" />
+              <span className="hidden sm:inline">Advanced Search</span>
+              <span className="sm:hidden">Search</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center space-x-2">
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">Notifications</span>
+              <span className="sm:hidden">Alerts</span>
+            </TabsTrigger>
+            <TabsTrigger value="market" className="flex items-center space-x-2">
+              <TrendingUp className="h-4 w-4" />
+              <span className="hidden sm:inline">Secondary Market</span>
+              <span className="sm:hidden">Market</span>
+            </TabsTrigger>
+            <TabsTrigger value="performance" className="flex items-center space-x-2">
+              <Zap className="h-4 w-4" />
+              <span className="hidden sm:inline">Performance</span>
+              <span className="sm:hidden">Perf</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="panel">
@@ -84,7 +81,7 @@ const AdminPage = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

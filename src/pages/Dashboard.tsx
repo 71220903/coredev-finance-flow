@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,9 +22,9 @@ import {
   Loader2
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import AppLayout from "@/components/navigation/AppLayout";
 import AchievementsWidget from "@/components/AchievementsWidget";
 import EnhancedStakingWidget from "@/components/EnhancedStakingWidget";
-import MobileNavigation from "@/components/MobileNavigation";
 import { usePortfolioAnalytics } from "@/hooks/usePortfolioAnalytics";
 import { useHybridStaking } from "@/hooks/useHybridStaking";
 
@@ -49,6 +48,10 @@ const Dashboard = () => {
     githubHandle: "@alexcoder",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face"
   });
+
+  const breadcrumbItems = [
+    { label: "Dashboard" }
+  ];
 
   const statsCards = [
     { 
@@ -97,44 +100,12 @@ const Dashboard = () => {
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Desktop Navigation */}
-      <nav className="hidden lg:block bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">CD</span>
-              </div>
-              <span className="text-xl font-bold text-slate-900">CoreDev Zero</span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <Link to="/marketplace" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Marketplace
-              </Link>
-              <Link to="/analytics" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Analytics
-              </Link>
-              <Button>Create Market</Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Mobile Navigation */}
-      <MobileNavigation />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 lg:pb-8">
-        {/* Header */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Welcome back, {userProfile.name}!
-          </h1>
-          <p className="text-slate-600">
-            Here's an overview of your developer activity and portfolio performance
-          </p>
-        </div>
-
+    <AppLayout
+      breadcrumbItems={breadcrumbItems}
+      pageTitle={`Welcome back, ${userProfile.name}!`}
+      pageDescription="Here's an overview of your developer activity and portfolio performance"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Stats Cards with Real Data */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {statsCards.map((card, index) => (
@@ -361,7 +332,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
