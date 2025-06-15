@@ -61,6 +61,7 @@ export const useContract = () => {
 
   return {
     ...contracts,
+    provider,
     getMarketContract,
     getReadOnlyContract,
     isReady: isConnected && !!provider && !!signer

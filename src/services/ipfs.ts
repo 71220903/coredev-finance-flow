@@ -72,6 +72,34 @@ class IPFSService {
     }
   }
 
+  async fetchFromIPFS(hash: string): Promise<any> {
+    try {
+      // For demo purposes, return mock data based on hash
+      // In production, this would fetch from the actual IPFS gateway
+      console.log('Fetching from IPFS hash:', hash);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Return mock project data
+      const mockData = {
+        title: `Project ${hash.slice(-6)}`,
+        description: `This is a demo project fetched from IPFS hash ${hash}`,
+        tags: ['DeFi', 'Smart Contracts', 'Web3'],
+        githubRepo: 'https://github.com/example/project',
+        borrowerName: `Developer ${hash.slice(-4)}`,
+        githubHandle: `@dev${hash.slice(-4)}`,
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
+        trustScore: Math.floor(Math.random() * 50) + 50
+      };
+      
+      return mockData;
+    } catch (error: any) {
+      console.error('IPFS fetch error:', error);
+      throw new Error(error.message || 'Failed to fetch from IPFS');
+    }
+  }
+
   getIPFSUrl(hash: string): string {
     return `${this.PINATA_GATEWAY}${hash}`;
   }
