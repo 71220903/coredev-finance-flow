@@ -16,7 +16,7 @@ interface DeveloperProfile {
 export const useDeveloperVerification = () => {
   const { toast } = useToast();
   const { address, isConnected, isOnCorrectNetwork } = useWallet();
-  const { getContract } = useContract();
+  const { marketFactory } = useContract();
   
   const [profileData, setProfileData] = useState<DeveloperProfile>({
     profileAddress: null,
@@ -42,8 +42,6 @@ export const useDeveloperVerification = () => {
     setProfileData(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const marketFactory = getContract(CONTRACTS.MARKET_FACTORY, MARKET_FACTORY_ABI);
-      
       if (!marketFactory) {
         throw new Error('Market factory contract not available');
       }
@@ -98,8 +96,6 @@ export const useDeveloperVerification = () => {
     }
 
     try {
-      const marketFactory = getContract(CONTRACTS.MARKET_FACTORY, MARKET_FACTORY_ABI);
-      
       if (!marketFactory) {
         throw new Error('Market factory contract not available');
       }
