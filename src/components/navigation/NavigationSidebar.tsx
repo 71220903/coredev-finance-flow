@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -116,17 +115,7 @@ const NavigationSidebar = () => {
   };
 
   const handleHelpSupport = () => {
-    // Open help documentation or support page
-    toast({
-      title: "Help & Support",
-      description: "Opening help documentation...",
-    });
-    
-    // You can either navigate to a help page or open external documentation
-    // For now, we'll show a toast and could open external docs
-    setTimeout(() => {
-      window.open("https://docs.lovable.dev/", "_blank");
-    }, 1000);
+    navigate("/help-support");
   };
 
   return (
