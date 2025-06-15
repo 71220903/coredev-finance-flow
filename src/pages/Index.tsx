@@ -2,10 +2,28 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Users, TrendingUp, Shield, Code2, Github, DollarSign } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowRight, Users, TrendingUp, Shield, Code2, Github, DollarSign, Wallet } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { WalletConnect } from "@/components/WalletConnect";
+import { UserModeSwitch } from "@/components/UserModeSwitch";
+import { useWallet } from "@/hooks/useWallet";
+import { useAdminDetection } from "@/hooks/useAdminDetection";
+import { useUserRole } from "@/contexts/UserRoleContext";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { isConnected } = useWallet();
+  const { isAdmin } = useUserRole();
+  
+  // Auto-detect admin status when wallet is connected
+  useAdminDetection();
+
+  const handleGetStarted = () => {
+    if (isConnected) {
+      navigate('/dashboard');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Navigation */}
@@ -23,9 +41,8 @@ const Index = () => {
               <Link to="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors">
                 Dashboard
               </Link>
-              <Button asChild>
-                <Link to="/auth">Get Started</Link>
-              </Button>
+              {isConnected && <UserModeSwitch />}
+              <WalletConnect />
             </div>
           </div>
         </div>
@@ -46,15 +63,22 @@ const Index = () => {
             Secure, transparent, and designed for the developer community.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild className="bg-blue-600 hover:bg-blue-700">
-              <Link to="/marketplace">
-                Explore Opportunities
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/dashboard">View Dashboard</Link>
-            </Button>
+            {!isConnected ? (
+              <div className="flex items-center space-x-2">
+                <Wallet className="h-5 w-5 text-blue-600" />
+                <span className="text-slate-600">Connect your wallet to get started</span>
+              </div>
+            ) : (
+              <>
+                <Button size="lg" onClick={handleGetStarted} className="bg-blue-600 hover:bg-blue-700">
+                  {isAdmin ? 'Go to Admin Panel' : 'Enter Dashboard'}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link to="/marketplace">Explore Markets</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -165,16 +189,15 @@ const Index = () => {
             Join thousands of developers and lenders building the future of decentralized finance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild className="bg-blue-600 hover:bg-blue-700">
-              <Link to="/auth">
-                Start as Borrower
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild className="border-slate-600 text-slate-300 hover:bg-slate-800">
-              <Link to="/auth">
-                Become a Lender
-              </Link>
-            </Button>
+            {!isConnected ? (
+              <div className="text-slate-300">
+                Connect your wallet above to get started
+              </div>
+            ) : (
+              <Button size="lg" onClick={handleGetStarted} className="bg-blue-600 hover:bg-blue-700">
+                Get Started Now
+              </Button>
+            )}
           </div>
         </div>
       </section>

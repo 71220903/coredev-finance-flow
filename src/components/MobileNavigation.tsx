@@ -16,6 +16,9 @@ import {
   X
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { UserModeSwitch } from "@/components/UserModeSwitch";
+import { useWallet } from "@/hooks/useWallet";
+import { useUserRole } from "@/contexts/UserRoleContext";
 
 interface NavigationItem {
   id: string;
@@ -28,13 +31,15 @@ interface NavigationItem {
 const MobileNavigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { isConnected } = useWallet();
+  const { isAdmin } = useUserRole();
 
   const navigationItems: NavigationItem[] = [
     { id: "home", label: "Home", icon: Home, href: "/" },
     { id: "marketplace", label: "Marketplace", icon: Search, href: "/marketplace" },
     { id: "dashboard", label: "Dashboard", icon: TrendingUp, href: "/dashboard" },
     { id: "profile", label: "Profile", icon: User, href: "/developer/1" },
-    { id: "admin", label: "Admin", icon: Shield, href: "/admin", badge: "Admin" },
+    ...(isAdmin ? [{ id: "admin", label: "Admin", icon: Shield, href: "/admin", badge: "Admin" }] : []),
   ];
 
   const isActiveRoute = (href: string) => {
@@ -84,6 +89,14 @@ const MobileNavigation = () => {
                   </div>
                 </div>
 
+                {/* User Mode Switch */}
+                {isConnected && (
+                  <div className="pt-4 border-t border-slate-200">
+                    <h4 className="text-sm font-medium text-slate-900 mb-3">Mode</h4>
+                    <UserModeSwitch />
+                  </div>
+                )}
+
                 {/* Navigation Items */}
                 <div className="space-y-2">
                   {navigationItems.map((item) => (
@@ -112,26 +125,28 @@ const MobileNavigation = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="pt-4 border-t border-slate-200">
-                  <h4 className="text-sm font-medium text-slate-900 mb-3">Quick Actions</h4>
-                  <div className="space-y-2">
-                    <Button 
-                      className="w-full justify-start transition-all duration-200 hover:scale-105" 
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Market
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start transition-all duration-200 hover:scale-105"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Trophy className="h-4 w-4 mr-2" />
-                      View Achievements
-                    </Button>
+                {isConnected && (
+                  <div className="pt-4 border-t border-slate-200">
+                    <h4 className="text-sm font-medium text-slate-900 mb-3">Quick Actions</h4>
+                    <div className="space-y-2">
+                      <Button 
+                        className="w-full justify-start transition-all duration-200 hover:scale-105" 
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Market
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start transition-all duration-200 hover:scale-105"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Trophy className="h-4 w-4 mr-2" />
+                        View Achievements
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* App Info */}
                 <div className="pt-4 border-t border-slate-200 text-center">
