@@ -1,9 +1,12 @@
-
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import TrustScoreWidget from "./TrustScoreWidget";
+import { useTokenDeposit } from "@/hooks/useTokenDeposit";
 import { 
   Clock, 
   DollarSign, 
@@ -55,6 +58,19 @@ interface LoanMarketCardProps {
 }
 
 const LoanMarketCard = ({ market, userRole = 'lender' }: LoanMarketCardProps) => {
+  const [showDepositForm, setShowDepositForm] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  
+  const {
+    balance,
+    allowance,
+    isApproving,
+    isDepositing,
+    executeDeposit,
+    hasSufficientAllowance,
+    hasSufficientBalance
+  } = useTokenDeposit(market.id);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'funding': return 'bg-blue-500';
@@ -74,6 +90,19 @@ const LoanMarketCard = ({ market, userRole = 'lender' }: LoanMarketCardProps) =>
       default: return 'Unknown';
     }
   };
+
+  const handleDeposit = async () => {
+    if (!depositAmount || parseFloat(depositAmount) <= 0) return;
+    
+    const success = await executeDeposit(depositAmount);
+    if (success) {
+      setDepositAmount('');
+      setShowDepositForm(false);
+    }
+  };
+
+  const remainingAmount = market.loan.target * (100 - market.loan.funded) / 100;
+  const maxDepositAmount = Math.min(remainingAmount, parseFloat(balance) || 0);
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
@@ -154,9 +183,67 @@ const LoanMarketCard = ({ market, userRole = 'lender' }: LoanMarketCardProps) =>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Funding Progress</span>
-              <span>{market.loan.funded}% of ${market.loan.target.toLocaleString()}</span>
+              <span>{market.loan.funded.toFixed(1)}% of ${market.loan.target.toLocaleString()}</span>
             </div>
             <Progress value={market.loan.funded} className="h-3" />
+            <div className="text-sm text-slate-600">
+              Remaining: ${remainingAmount.toLocaleString()}
+            </div>
+          </div>
+        )}
+
+        {/* Deposit Form */}
+        {showDepositForm && market.loan.status === 'funding' && (
+          <div className="p-4 border rounded-lg bg-blue-50 space-y-3">
+            <div className="text-sm text-slate-600">
+              Your sUSDT Balance: {parseFloat(balance).toFixed(2)}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="depositAmount">Deposit Amount (sUSDT)</Label>
+              <Input
+                id="depositAmount"
+                type="number"
+                placeholder="0.00"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                max={maxDepositAmount}
+                step="0.01"
+              />
+            </div>
+            
+            {depositAmount && !hasSufficientBalance(depositAmount) && (
+              <div className="text-sm text-red-600">Insufficient balance</div>
+            )}
+            
+            {depositAmount && !hasSufficientAllowance(depositAmount) && (
+              <div className="text-sm text-yellow-600">
+                Approval needed for {depositAmount} sUSDT
+              </div>
+            )}
+            
+            <div className="flex space-x-2">
+              <Button 
+                onClick={handleDeposit}
+                disabled={
+                  !depositAmount || 
+                  parseFloat(depositAmount) <= 0 || 
+                  !hasSufficientBalance(depositAmount) ||
+                  isApproving ||
+                  isDepositing
+                }
+                className="flex-1"
+              >
+                {isApproving ? 'Approving...' : isDepositing ? 'Depositing...' : 'Deposit'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDepositForm(false)}
+                disabled={isApproving || isDepositing}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         )}
 
@@ -186,9 +273,9 @@ const LoanMarketCard = ({ market, userRole = 'lender' }: LoanMarketCardProps) =>
           </Button>
           
           <div className="space-x-2">
-            {userRole === 'lender' && market.loan.status === 'funding' && (
-              <Button>
-                Fund ${(market.loan.amount * (100 - market.loan.funded) / 100).toLocaleString()}
+            {userRole === 'lender' && market.loan.status === 'funding' && !showDepositForm && (
+              <Button onClick={() => setShowDepositForm(true)}>
+                Fund ${remainingAmount.toLocaleString()}
               </Button>
             )}
             

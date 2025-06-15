@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoanMarketCard from "@/components/LoanMarketCard";
@@ -13,117 +14,65 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { WalletConnect } from "@/components/WalletConnect";
+import { useMarketData } from "@/hooks/useMarketData";
+import { useMarketEvents } from "@/hooks/useMarketEvents";
 
 const Marketplace = () => {
   const [searchFilters, setSearchFilters] = useState<any>({});
+  const { markets, loading, error, refreshMarket, refetchMarkets } = useMarketData();
 
-  // Enhanced mock data with complete loan lifecycle
-  const loanMarkets = [
-    {
-      id: "1",
-      borrower: {
-        name: "Alex Rodriguez",
-        githubHandle: "@alexcoder",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face",
-        trustScore: 88,
-        trustBreakdown: { github: 35, codeQuality: 28, community: 20, onChain: 5 }
-      },
-      project: {
-        title: "AI-Powered SaaS Platform for SMBs",
-        description: "Building a comprehensive business management platform using React, Node.js, and PostgreSQL with AI automation features. Already have MVP with 100+ beta users showing strong product-market fit.",
-        tags: ["React", "Node.js", "AI/ML", "SaaS", "B2B"]
-      },
-      loan: {
-        amount: 50000,
-        interestRate: 12.5,
-        tenor: "12 months",
-        tenorDays: 365,
-        funded: 65,
-        target: 50000,
-        status: "funding" as const,
-        timeLeft: "5 days"
-      }
+  // Set up real-time event listeners
+  useMarketEvents({
+    onMarketCreated: (borrower, marketAddress, projectCID) => {
+      console.log('New market created, refreshing data...');
+      refetchMarkets();
     },
-    {
-      id: "2",
-      borrower: {
-        name: "Sarah Chen",
-        githubHandle: "@sarahml",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b332db29?w=50&h=50&fit=crop&crop=face",
-        trustScore: 92,
-        trustBreakdown: { github: 38, codeQuality: 29, community: 22, onChain: 3 }
-      },
-      project: {
-        title: "AI Code Review Tool",
-        description: "Developing an AI tool that automatically reviews code for bugs and optimization opportunities using advanced machine learning algorithms. Built with Python, TensorFlow, and cloud infrastructure.",
-        tags: ["Python", "AI/ML", "DevTools", "TensorFlow", "Cloud"]
-      },
-      loan: {
-        amount: 25000,
-        interestRate: 10.8,
-        tenor: "8 months",
-        tenorDays: 240,
-        funded: 100,
-        target: 25000,
-        status: "active" as const,
-        startDate: "Jan 15, 2024",
-        dueDate: "Sep 15, 2024"
-      }
+    onDeposited: (marketAddress, lender, amount) => {
+      console.log('Deposit detected, refreshing market...');
+      refreshMarket(marketAddress);
     },
-    {
-      id: "3",
-      borrower: {
-        name: "Mike Johnson",
-        githubHandle: "@mobiledev",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face",
-        trustScore: 76,
-        trustBreakdown: { github: 30, codeQuality: 22, community: 18, onChain: 6 }
-      },
-      project: {
-        title: "Local Services Marketplace App",
-        description: "Creating a React Native marketplace app connecting local service providers with customers. Includes real-time messaging, payment processing, and review system.",
-        tags: ["React Native", "Mobile", "E-commerce", "Marketplace"]
-      },
-      loan: {
-        amount: 15000,
-        interestRate: 14.2,
-        tenor: "6 months",
-        tenorDays: 180,
-        funded: 100,
-        target: 15000,
-        status: "repaid" as const,
-        startDate: "Aug 1, 2023",
-        dueDate: "Feb 1, 2024"
-      }
+    onLoanStarted: (marketAddress, startTime, fundingAmount) => {
+      console.log('Loan started, refreshing market...');
+      refreshMarket(marketAddress);
     },
-    {
-      id: "4",
-      borrower: {
-        name: "Emma Wilson",
-        githubHandle: "@emmaweb3",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face",
-        trustScore: 85,
-        trustBreakdown: { github: 33, codeQuality: 26, community: 21, onChain: 5 }
-      },
-      project: {
-        title: "DeFi Analytics Dashboard",
-        description: "Building a comprehensive DeFi analytics platform with real-time data visualization, portfolio tracking, and yield farming optimization tools.",
-        tags: ["React", "DeFi", "Web3", "Analytics", "TypeScript"]
-      },
-      loan: {
-        amount: 35000,
-        interestRate: 11.5,
-        tenor: "10 months",
-        tenorDays: 300,
-        funded: 30,
-        target: 35000,
-        status: "funding" as const,
-        timeLeft: "12 days"
-      }
+    onLoanRepaid: (marketAddress, totalAmount) => {
+      console.log('Loan repaid, refreshing market...');
+      refreshMarket(marketAddress);
     }
-  ];
+  });
 
-  const filteredMarkets = loanMarkets.filter(market => {
+  // Transform contract data to component format
+  const transformedMarkets = markets.map(market => ({
+    id: market.contractAddress,
+    borrower: {
+      name: market.borrowerProfile?.name || 'Unknown Developer',
+      githubHandle: market.borrowerProfile?.githubHandle || '@unknown',
+      avatar: market.borrowerProfile?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
+      trustScore: market.borrowerProfile?.trustScore || 50,
+      trustBreakdown: { github: 25, codeQuality: 15, community: 10, onChain: 0 }
+    },
+    project: {
+      title: market.projectData?.title || 'Untitled Project',
+      description: market.projectData?.description || 'No description available',
+      tags: market.projectData?.tags || ['Development']
+    },
+    loan: {
+      amount: parseFloat(market.loanAmount),
+      interestRate: market.interestRateBps / 100, // Convert basis points to percentage
+      tenor: `${Math.floor(market.tenorSeconds / (24 * 60 * 60))} days`,
+      tenorDays: Math.floor(market.tenorSeconds / (24 * 60 * 60)),
+      funded: market.currentState === 0 ? Math.min(100, (parseFloat(market.totalDeposited) / parseFloat(market.loanAmount)) * 100) : 100,
+      target: parseFloat(market.loanAmount),
+      status: market.currentState === 0 ? 'funding' as const : 
+              market.currentState === 1 ? 'active' as const : 
+              market.currentState === 2 ? 'repaid' as const : 'defaulted' as const,
+      timeLeft: market.currentState === 0 ? 'TBD' : undefined,
+      startDate: market.currentState >= 1 ? 'Recently' : undefined,
+      dueDate: market.currentState >= 1 ? 'Future' : undefined
+    }
+  }));
+
+  const filteredMarkets = transformedMarkets.filter(market => {
     // Enhanced filtering logic with advanced search
     let matches = true;
     
@@ -161,10 +110,14 @@ const Marketplace = () => {
     return matches;
   });
 
-  // Calculate stats
-  const totalRequested = loanMarkets.reduce((sum, market) => sum + market.loan.amount, 0);
-  const avgInterestRate = loanMarkets.reduce((sum, market) => sum + market.loan.interestRate, 0) / loanMarkets.length;
-  const successRate = Math.round((loanMarkets.filter(m => m.loan.status === 'repaid').length / loanMarkets.length) * 100);
+  // Calculate stats from real data
+  const totalRequested = transformedMarkets.reduce((sum, market) => sum + market.loan.amount, 0);
+  const avgInterestRate = transformedMarkets.length > 0 
+    ? transformedMarkets.reduce((sum, market) => sum + market.loan.interestRate, 0) / transformedMarkets.length
+    : 0;
+  const successRate = transformedMarkets.length > 0
+    ? Math.round((transformedMarkets.filter(m => m.loan.status === 'repaid').length / transformedMarkets.length) * 100)
+    : 0;
 
   const handleFiltersChange = (filters: any) => {
     setSearchFilters(filters);
@@ -173,6 +126,28 @@ const Marketplace = () => {
   const handleFiltersReset = () => {
     setSearchFilters({});
   };
+
+  if (loading && markets.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading markets from blockchain...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading markets: {error}</p>
+          <Button onClick={refetchMarkets}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -211,6 +186,11 @@ const Marketplace = () => {
           <p className="text-slate-600">
             Discover isolated lending markets created by verified developers with fixed rates and clear terms
           </p>
+          {loading && (
+            <p className="text-sm text-blue-600 mt-2">
+              🔄 Syncing with blockchain...
+            </p>
+          )}
         </div>
 
         {/* Advanced Search */}
@@ -229,9 +209,9 @@ const Marketplace = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loanMarkets.length}</div>
+              <div className="text-2xl font-bold">{transformedMarkets.length}</div>
               <p className="text-xs text-muted-foreground">
-                {loanMarkets.filter(m => m.loan.status === 'funding').length} seeking funding
+                {transformedMarkets.filter(m => m.loan.status === 'funding').length} seeking funding
               </p>
             </CardContent>
           </Card>
@@ -287,10 +267,21 @@ const Marketplace = () => {
           ))}
         </div>
 
-        {filteredMarkets.length === 0 && (
+        {filteredMarkets.length === 0 && !loading && (
           <div className="text-center py-12">
-            <div className="text-slate-500 mb-4">No markets found matching your criteria</div>
-            <Button variant="outline" onClick={handleFiltersReset}>Clear Filters</Button>
+            <div className="text-slate-500 mb-4">
+              {transformedMarkets.length === 0 
+                ? "No markets found on the blockchain" 
+                : "No markets found matching your criteria"
+              }
+            </div>
+            <div className="space-x-2">
+              {transformedMarkets.length === 0 ? (
+                <Button onClick={refetchMarkets}>Refresh from Blockchain</Button>
+              ) : (
+                <Button variant="outline" onClick={handleFiltersReset}>Clear Filters</Button>
+              )}
+            </div>
           </div>
         )}
       </div>
