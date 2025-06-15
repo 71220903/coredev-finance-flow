@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from './useWallet';
 import { useToast } from '@/hooks/use-toast';
@@ -16,50 +16,97 @@ export const useLoanPositionNFT = () => {
   const { toast } = useToast();
   const [positions, setPositions] = useState<LoanPosition[]>([]);
   const [loading, setLoading] = useState(false);
+  const fetchingRef = useRef(false);
 
   const getLoanPositionContract = useCallback(() => {
-    if (!signer || !isConnected) return null;
-    return new ethers.Contract(CONTRACTS.LOAN_POSITION_NFT, LOAN_POSITION_NFT, signer);
+    if (!signer || !isConnected) {
+      console.log('No signer or not connected for loan position contract');
+      return null;
+    }
+    try {
+      return new ethers.Contract(CONTRACTS.LOAN_POSITION_NFT, LOAN_POSITION_NFT, signer);
+    } catch (error) {
+      console.error('Error creating loan position contract:', error);
+      return null;
+    }
   }, [signer, isConnected]);
 
   const fetchUserPositions = useCallback(async () => {
-    if (!address || !provider) return [];
+    if (!address || !provider || fetchingRef.current) {
+      console.log('Skipping NFT fetch - conditions not met');
+      return [];
+    }
 
+    fetchingRef.current = true;
     setLoading(true);
+    
     try {
+      console.log('Fetching user NFT positions...');
+      
       const contract = getLoanPositionContract();
-      if (!contract) return [];
+      if (!contract) {
+        console.log('No loan position contract available');
+        return [];
+      }
 
-      const balance = await contract.balanceOf(address);
+      // First try to get balance with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Balance fetch timeout')), 5000)
+      );
+
+      let balance;
+      try {
+        balance = await Promise.race([contract.balanceOf(address), timeoutPromise]);
+        console.log('User NFT balance:', balance.toString());
+      } catch (error) {
+        console.error('Error getting NFT balance:', error);
+        return [];
+      }
+
+      const balanceNumber = Number(balance);
+      if (balanceNumber === 0) {
+        console.log('User has no NFT positions');
+        setPositions([]);
+        return [];
+      }
+
       const userPositions: LoanPosition[] = [];
-
-      // Note: This is a simplified approach. In a real implementation,
-      // you'd need to track tokenIds more efficiently (events, subgraph, etc.)
-      for (let i = 0; i < Number(balance); i++) {
+      
+      // Try to fetch positions with limited attempts to prevent infinite loops
+      const maxAttempts = Math.min(balanceNumber, 20); // Cap at reasonable number
+      
+      for (let i = 0; i < maxAttempts; i++) {
         try {
-          // This would need proper token enumeration in the contract
-          // For now, we'll use a mock approach
+          // This is a simplified approach - in production you'd use tokenOfOwnerByIndex
           const tokenId = i + 1;
           const position = await contract.positions(tokenId);
           
-          userPositions.push({
-            tokenId,
-            marketAddress: position.marketAddress,
-            principalAmount: Number(ethers.formatUnits(position.principalAmount, 6))
-          });
+          // Verify this position belongs to the user
+          const owner = await contract.ownerOf(tokenId);
+          if (owner.toLowerCase() === address.toLowerCase()) {
+            userPositions.push({
+              tokenId,
+              marketAddress: position.marketAddress,
+              principalAmount: Number(ethers.formatUnits(position.principalAmount, 6))
+            });
+          }
         } catch (error) {
-          // Token might not exist or not owned by user
+          // Token might not exist or not owned by user - this is expected
+          console.log(`Token ${i + 1} not found or not owned by user`);
           continue;
         }
       }
 
+      console.log(`Found ${userPositions.length} NFT positions for user`);
       setPositions(userPositions);
       return userPositions;
+      
     } catch (error) {
       console.error('Error fetching loan positions:', error);
       return [];
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   }, [address, provider, getLoanPositionContract]);
 
@@ -75,6 +122,7 @@ export const useLoanPositionNFT = () => {
     }
 
     try {
+      console.log('Burning position NFT:', tokenId);
       const tx = await contract.burnPosition(tokenId);
       await tx.wait();
       
@@ -83,7 +131,7 @@ export const useLoanPositionNFT = () => {
         description: `Loan position NFT #${tokenId} has been burned`
       });
       
-      // Refresh positions
+      // Refresh positions after burn
       await fetchUserPositions();
       return true;
     } catch (error) {

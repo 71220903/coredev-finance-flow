@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ethers } from 'ethers';
 import { useContract } from './useContract';
 import { useWallet } from './useWallet';
@@ -74,71 +74,101 @@ export const usePortfolioAnalytics = () => {
   });
   const [transactionHistory, setTransactionHistory] = useState<TransactionHistory[]>([]);
   const [loading, setLoading] = useState(false);
+  const fetchingRef = useRef(false);
+
+  // Stable reference for markets to prevent loops
+  const stableMarkets = useMemo(() => markets, [markets.length, markets.map(m => m.id).join(',')]);
+  
+  // Stable reference for NFT positions
+  const stableNftPositions = useMemo(() => nftPositions, [nftPositions.length, nftPositions.map(p => p.tokenId).join(',')]);
 
   // Enhanced lending positions fetch using NFT positions
-  const fetchLendingPositions = useCallback(async () => {
-    if (!address || !provider || markets.length === 0) return [];
+  const fetchLendingPositions = useCallback(async (): Promise<LendingPosition[]> => {
+    if (!address || !provider || stableMarkets.length === 0 || stableNftPositions.length === 0) {
+      return [];
+    }
+
+    console.log('Fetching lending positions for', stableNftPositions.length, 'NFT positions');
 
     const positions: LendingPosition[] = [];
 
     try {
-      // Use NFT positions as the source of truth for lending positions
-      for (const nftPosition of nftPositions) {
-        const market = markets.find(m => m.contractAddress === nftPosition.marketAddress);
-        if (!market) continue;
-
-        const marketContract = getMarketContract(nftPosition.marketAddress);
-        if (!marketContract) continue;
-
-        const currentState = Number(await marketContract.currentState());
-        const interestRateBps = Number(await marketContract.interestRateBps());
-        const interestRate = interestRateBps / 10000;
-
-        let interestEarned = 0;
-        let status: 'active' | 'completed' | 'defaulted' = 'active';
-        let currentValue = nftPosition.principalAmount;
-
-        if (currentState === 2) { // Completed
-          status = 'completed';
-          interestEarned = nftPosition.principalAmount * interestRate;
-          currentValue = nftPosition.principalAmount + interestEarned;
-        } else if (currentState === 1) { // Active/Funded
-          status = 'active';
-          // Calculate accrued interest (simplified)
-          const timeElapsed = 30; // Mock days
-          interestEarned = nftPosition.principalAmount * interestRate * (timeElapsed / 365);
-          currentValue = nftPosition.principalAmount + interestEarned;
+      for (const nftPosition of stableNftPositions) {
+        const market = stableMarkets.find(m => m.contractAddress === nftPosition.marketAddress);
+        if (!market) {
+          console.log('Market not found for NFT position:', nftPosition.marketAddress);
+          continue;
         }
 
-        positions.push({
-          marketAddress: nftPosition.marketAddress,
-          depositAmount: nftPosition.principalAmount,
-          currentValue,
-          interestEarned,
-          status,
-          startDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-          maturityDate: status === 'active' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : undefined,
-          borrowerProfile: {
-            name: market.borrowerProfile?.name || 'Unknown',
-            trustScore: market.borrowerProfile?.trustScore || 50
+        const marketContract = getMarketContract(nftPosition.marketAddress);
+        if (!marketContract) {
+          console.log('Market contract not available:', nftPosition.marketAddress);
+          continue;
+        }
+
+        try {
+          const [currentState, interestRateBps] = await Promise.allSettled([
+            marketContract.currentState(),
+            marketContract.interestRateBps()
+          ]);
+
+          const state = currentState.status === 'fulfilled' ? Number(currentState.value) : 0;
+          const rate = interestRateBps.status === 'fulfilled' ? Number(interestRateBps.value) : 0;
+          const interestRate = rate / 10000;
+
+          let interestEarned = 0;
+          let status: 'active' | 'completed' | 'defaulted' = 'active';
+          let currentValue = nftPosition.principalAmount;
+
+          if (state === 2) { // Completed
+            status = 'completed';
+            interestEarned = nftPosition.principalAmount * interestRate;
+            currentValue = nftPosition.principalAmount + interestEarned;
+          } else if (state === 1) { // Active/Funded
+            status = 'active';
+            // Calculate accrued interest (simplified)
+            const timeElapsed = 30; // Mock days
+            interestEarned = nftPosition.principalAmount * interestRate * (timeElapsed / 365);
+            currentValue = nftPosition.principalAmount + interestEarned;
           }
-        });
+
+          positions.push({
+            marketAddress: nftPosition.marketAddress,
+            depositAmount: nftPosition.principalAmount,
+            currentValue,
+            interestEarned,
+            status,
+            startDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+            maturityDate: status === 'active' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : undefined,
+            borrowerProfile: {
+              name: market.borrowerProfile?.name || 'Unknown',
+              trustScore: market.borrowerProfile?.trustScore || 50
+            }
+          });
+        } catch (error) {
+          console.error('Error processing NFT position:', nftPosition.tokenId, error);
+        }
       }
     } catch (error) {
       console.error('Error fetching lending positions:', error);
     }
 
+    console.log('Fetched', positions.length, 'lending positions');
     return positions;
-  }, [address, provider, markets, nftPositions, getMarketContract]);
+  }, [address, provider, stableMarkets, stableNftPositions, getMarketContract]);
 
   // Fetch user's borrowing positions
-  const fetchBorrowingPositions = useCallback(async () => {
-    if (!address || !provider || markets.length === 0) return [];
+  const fetchBorrowingPositions = useCallback(async (): Promise<BorrowingPosition[]> => {
+    if (!address || !provider || stableMarkets.length === 0) {
+      return [];
+    }
+
+    console.log('Fetching borrowing positions...');
 
     const positions: BorrowingPosition[] = [];
 
     try {
-      for (const market of markets) {
+      for (const market of stableMarkets) {
         // Check if user is the borrower
         if (market.borrower.toLowerCase() === address.toLowerCase()) {
           const borrowedAmount = Number(market.loanAmount);
@@ -176,8 +206,9 @@ export const usePortfolioAnalytics = () => {
       console.error('Error fetching borrowing positions:', error);
     }
 
+    console.log('Fetched', positions.length, 'borrowing positions');
     return positions;
-  }, [address, provider, markets]);
+  }, [address, provider, stableMarkets]);
 
   // Calculate portfolio metrics
   const calculateMetrics = useCallback((
@@ -230,14 +261,13 @@ export const usePortfolioAnalytics = () => {
     if (!address || !provider) return [];
 
     try {
-      // In a real implementation, you would query blockchain events
-      // For now, generating mock transaction history
+      // Mock transaction history for now
       const mockTransactions: TransactionHistory[] = [
         {
           hash: '0x1234...5678',
           type: 'deposit',
           amount: 1000,
-          marketAddress: markets[0]?.contractAddress || '0x...',
+          marketAddress: stableMarkets[0]?.contractAddress || '0x...',
           timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
           status: 'confirmed'
         },
@@ -245,7 +275,7 @@ export const usePortfolioAnalytics = () => {
           hash: '0x2345...6789',
           type: 'borrow',
           amount: 5000,
-          marketAddress: markets[1]?.contractAddress || '0x...',
+          marketAddress: stableMarkets[1]?.contractAddress || '0x...',
           timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
           status: 'confirmed'
         }
@@ -256,48 +286,74 @@ export const usePortfolioAnalytics = () => {
       console.error('Error fetching transaction history:', error);
       return [];
     }
-  }, [address, provider, markets]);
+  }, [address, provider, stableMarkets]);
 
-  // Main data fetching function
+  // Main data fetching function with proper error handling
   const fetchPortfolioData = useCallback(async () => {
-    if (!address || !isConnected) return;
+    if (!address || !isConnected || fetchingRef.current) {
+      console.log('Skipping portfolio fetch - conditions not met');
+      return;
+    }
 
+    fetchingRef.current = true;
     setLoading(true);
+    
     try {
-      // Fetch NFT positions first
-      await fetchUserPositions();
+      console.log('Starting portfolio data fetch...');
       
-      const [lendingPos, borrowingPos, txHistory] = await Promise.all([
+      // Fetch NFT positions first, but don't wait indefinitely
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('NFT fetch timeout')), 10000)
+      );
+
+      try {
+        await Promise.race([fetchUserPositions(), timeoutPromise]);
+      } catch (error) {
+        console.warn('NFT positions fetch failed or timed out:', error);
+        // Continue with available data
+      }
+
+      const [lendingPos, borrowingPos, txHistory] = await Promise.allSettled([
         fetchLendingPositions(),
         fetchBorrowingPositions(),
         fetchTransactionHistory()
       ]);
 
-      setLendingPositions(lendingPos);
-      setBorrowingPositions(borrowingPos);
-      setTransactionHistory(txHistory);
-      setPortfolioMetrics(calculateMetrics(lendingPos, borrowingPos));
+      const lendingPositions = lendingPos.status === 'fulfilled' ? lendingPos.value : [];
+      const borrowingPositions = borrowingPos.status === 'fulfilled' ? borrowingPos.value : [];
+      const transactionHistory = txHistory.status === 'fulfilled' ? txHistory.value : [];
+
+      setLendingPositions(lendingPositions);
+      setBorrowingPositions(borrowingPositions);
+      setTransactionHistory(transactionHistory);
+      setPortfolioMetrics(calculateMetrics(lendingPositions, borrowingPositions));
+
+      console.log('Portfolio data fetch completed successfully');
 
     } catch (error) {
       console.error('Error fetching portfolio data:', error);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   }, [address, isConnected, fetchUserPositions, fetchLendingPositions, fetchBorrowingPositions, fetchTransactionHistory, calculateMetrics]);
 
-  // Effects
+  // Stable effect that only runs when necessary
   useEffect(() => {
-    if (isConnected && markets.length > 0) {
-      fetchPortfolioData();
+    if (isConnected && stableMarkets.length > 0 && !fetchingRef.current) {
+      console.log('Portfolio effect triggered');
+      // Add a small delay to prevent rapid re-fetching
+      const timeoutId = setTimeout(fetchPortfolioData, 500);
+      return () => clearTimeout(timeoutId);
     }
-  }, [isConnected, markets.length, fetchPortfolioData]);
+  }, [isConnected, stableMarkets.length > 0]); // Only depend on stable values
 
   return {
     lendingPositions,
     borrowingPositions,
     portfolioMetrics,
     transactionHistory,
-    nftPositions,
+    nftPositions: stableNftPositions,
     loading,
     refreshPortfolio: fetchPortfolioData
   };
