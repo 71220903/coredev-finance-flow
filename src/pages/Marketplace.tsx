@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import TrustScoreWidget from "@/components/TrustScoreWidget";
 import { 
   Search, 
   Filter, 
@@ -18,7 +19,8 @@ import {
   TrendingUp,
   Code2,
   Users,
-  Plus
+  Plus,
+  Eye
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -32,55 +34,64 @@ const Marketplace = () => {
       id: 1,
       borrower: "alexcoder",
       githubHandle: "@alexcoder",
+      name: "Alex Rodriguez",
       amount: 15000,
       interestRate: 7.5,
       duration: "12 months",
       purpose: "Building a SaaS platform for small businesses",
       description: "Need funding to develop a comprehensive business management platform using React, Node.js, and PostgreSQL. Already have MVP with 100+ beta users.",
       trustScore: 88,
+      trustBreakdown: { github: 35, codeQuality: 28, community: 20, onChain: 5 },
       experience: "5 years",
       repos: 42,
       followers: 230,
       tags: ["React", "Node.js", "SaaS", "B2B"],
       timeLeft: "5 days",
       funded: 45,
-      target: 100
+      target: 100,
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face"
     },
     {
       id: 2,
       borrower: "sarahml",
       githubHandle: "@sarahml",
+      name: "Sarah Chen",
       amount: 8000,
       interestRate: 8.2,
       duration: "6 months",
       purpose: "AI-powered code review tool development",
       description: "Developing an AI tool that automatically reviews code for bugs and optimization opportunities. Using Python, TensorFlow, and cloud infrastructure.",
       trustScore: 92,
+      trustBreakdown: { github: 38, codeQuality: 29, community: 22, onChain: 3 },
       experience: "3 years",
       repos: 28,
       followers: 450,
       tags: ["Python", "AI/ML", "DevTools", "TensorFlow"],
       timeLeft: "12 days",
       funded: 20,
-      target: 100
+      target: 100,
+      avatar: "https://images.unsplash.com/photo-1494790108755-2616b332db29?w=50&h=50&fit=crop&crop=face"
     },
     {
       id: 3,
       borrower: "mobiledev",
       githubHandle: "@mobiledev",
+      name: "Mike Johnson",
       amount: 5000,
       interestRate: 9.0,
       duration: "4 months",
       purpose: "React Native app for local businesses",
       description: "Creating a marketplace app for local service providers. Need funding for development tools, cloud services, and marketing.",
       trustScore: 76,
+      trustBreakdown: { github: 30, codeQuality: 22, community: 18, onChain: 6 },
       experience: "2 years",
       repos: 18,
       followers: 89,
       tags: ["React Native", "Mobile", "E-commerce"],
       timeLeft: "8 days",
       funded: 60,
-      target: 100
+      target: 100,
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face"
     }
   ];
 
@@ -264,12 +275,16 @@ const Marketplace = () => {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
-                      <Github className="h-6 w-6 text-white" />
-                    </div>
+                    <img 
+                      src={request.avatar} 
+                      alt={request.name}
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
                     <div>
                       <CardTitle className="text-lg">{request.purpose}</CardTitle>
                       <div className="flex items-center space-x-4 text-sm text-slate-600 mt-1">
+                        <span>{request.name}</span>
+                        <span>•</span>
                         <span>{request.githubHandle}</span>
                         <span>•</span>
                         <span>{request.experience} experience</span>
@@ -281,11 +296,7 @@ const Marketplace = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="font-semibold">{request.trustScore}</span>
-                    </div>
-                    <Badge variant="outline">Trust Score</Badge>
+                    <TrustScoreWidget score={request.trustScore} compact />
                   </div>
                 </div>
               </CardHeader>
@@ -329,7 +340,19 @@ const Marketplace = () => {
                       ></div>
                     </div>
                   </div>
-                  <Button>Fund This Project</Button>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" asChild>
+                      <Link to={`/project/${request.id}`}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </Link>
+                    </Button>
+                    <Button asChild>
+                      <Link to={`/developer/${request.borrower}`}>
+                        Fund This Project
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
