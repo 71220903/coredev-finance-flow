@@ -1,7 +1,7 @@
 
 export const CORE_TESTNET_CONFIG = {
-  chainId: 1115,
-  chainName: 'Core Blockchain Testnet',
+  chainId: 1114,
+  chainName: 'Core Blockchain Testnet2',
   rpcUrl: 'https://rpc.test2.btcs.network',
   blockExplorer: 'https://scan.test2.btcs.network',
   nativeCurrency: {
