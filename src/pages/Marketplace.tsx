@@ -1,26 +1,19 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import TrustScoreWidget from "@/components/TrustScoreWidget";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import LoanMarketCard from "@/components/LoanMarketCard";
+import CreateMarketModal from "@/components/CreateMarketModal";
 import { 
   Search, 
   Filter, 
-  Github, 
-  Star, 
-  Clock, 
   DollarSign,
   TrendingUp,
-  Code2,
   Users,
-  Plus,
-  Eye
+  Star,
+  Plus
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -29,82 +22,128 @@ const Marketplace = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [filterBy, setFilterBy] = useState("all");
 
-  const loanRequests = [
+  // Enhanced mock data with complete loan lifecycle
+  const loanMarkets = [
     {
-      id: 1,
-      borrower: "alexcoder",
-      githubHandle: "@alexcoder",
-      name: "Alex Rodriguez",
-      amount: 15000,
-      interestRate: 7.5,
-      duration: "12 months",
-      purpose: "Building a SaaS platform for small businesses",
-      description: "Need funding to develop a comprehensive business management platform using React, Node.js, and PostgreSQL. Already have MVP with 100+ beta users.",
-      trustScore: 88,
-      trustBreakdown: { github: 35, codeQuality: 28, community: 20, onChain: 5 },
-      experience: "5 years",
-      repos: 42,
-      followers: 230,
-      tags: ["React", "Node.js", "SaaS", "B2B"],
-      timeLeft: "5 days",
-      funded: 45,
-      target: 100,
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face"
+      id: "1",
+      borrower: {
+        name: "Alex Rodriguez",
+        githubHandle: "@alexcoder",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face",
+        trustScore: 88,
+        trustBreakdown: { github: 35, codeQuality: 28, community: 20, onChain: 5 }
+      },
+      project: {
+        title: "AI-Powered SaaS Platform for SMBs",
+        description: "Building a comprehensive business management platform using React, Node.js, and PostgreSQL with AI automation features. Already have MVP with 100+ beta users showing strong product-market fit.",
+        tags: ["React", "Node.js", "AI/ML", "SaaS", "B2B"]
+      },
+      loan: {
+        amount: 50000,
+        interestRate: 12.5,
+        tenor: "12 months",
+        tenorDays: 365,
+        funded: 65,
+        target: 50000,
+        status: "funding" as const,
+        timeLeft: "5 days"
+      }
     },
     {
-      id: 2,
-      borrower: "sarahml",
-      githubHandle: "@sarahml",
-      name: "Sarah Chen",
-      amount: 8000,
-      interestRate: 8.2,
-      duration: "6 months",
-      purpose: "AI-powered code review tool development",
-      description: "Developing an AI tool that automatically reviews code for bugs and optimization opportunities. Using Python, TensorFlow, and cloud infrastructure.",
-      trustScore: 92,
-      trustBreakdown: { github: 38, codeQuality: 29, community: 22, onChain: 3 },
-      experience: "3 years",
-      repos: 28,
-      followers: 450,
-      tags: ["Python", "AI/ML", "DevTools", "TensorFlow"],
-      timeLeft: "12 days",
-      funded: 20,
-      target: 100,
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b332db29?w=50&h=50&fit=crop&crop=face"
+      id: "2",
+      borrower: {
+        name: "Sarah Chen",
+        githubHandle: "@sarahml",
+        avatar: "https://images.unsplash.com/photo-1494790108755-2616b332db29?w=50&h=50&fit=crop&crop=face",
+        trustScore: 92,
+        trustBreakdown: { github: 38, codeQuality: 29, community: 22, onChain: 3 }
+      },
+      project: {
+        title: "AI Code Review Tool",
+        description: "Developing an AI tool that automatically reviews code for bugs and optimization opportunities using advanced machine learning algorithms. Built with Python, TensorFlow, and cloud infrastructure.",
+        tags: ["Python", "AI/ML", "DevTools", "TensorFlow", "Cloud"]
+      },
+      loan: {
+        amount: 25000,
+        interestRate: 10.8,
+        tenor: "8 months",
+        tenorDays: 240,
+        funded: 100,
+        target: 25000,
+        status: "active" as const,
+        startDate: "Jan 15, 2024",
+        dueDate: "Sep 15, 2024"
+      }
     },
     {
-      id: 3,
-      borrower: "mobiledev",
-      githubHandle: "@mobiledev",
-      name: "Mike Johnson",
-      amount: 5000,
-      interestRate: 9.0,
-      duration: "4 months",
-      purpose: "React Native app for local businesses",
-      description: "Creating a marketplace app for local service providers. Need funding for development tools, cloud services, and marketing.",
-      trustScore: 76,
-      trustBreakdown: { github: 30, codeQuality: 22, community: 18, onChain: 6 },
-      experience: "2 years",
-      repos: 18,
-      followers: 89,
-      tags: ["React Native", "Mobile", "E-commerce"],
-      timeLeft: "8 days",
-      funded: 60,
-      target: 100,
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face"
+      id: "3",
+      borrower: {
+        name: "Mike Johnson",
+        githubHandle: "@mobiledev",
+        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face",
+        trustScore: 76,
+        trustBreakdown: { github: 30, codeQuality: 22, community: 18, onChain: 6 }
+      },
+      project: {
+        title: "Local Services Marketplace App",
+        description: "Creating a React Native marketplace app connecting local service providers with customers. Includes real-time messaging, payment processing, and review system.",
+        tags: ["React Native", "Mobile", "E-commerce", "Marketplace"]
+      },
+      loan: {
+        amount: 15000,
+        interestRate: 14.2,
+        tenor: "6 months",
+        tenorDays: 180,
+        funded: 100,
+        target: 15000,
+        status: "repaid" as const,
+        startDate: "Aug 1, 2023",
+        dueDate: "Feb 1, 2024"
+      }
+    },
+    {
+      id: "4",
+      borrower: {
+        name: "Emma Wilson",
+        githubHandle: "@emmaweb3",
+        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face",
+        trustScore: 85,
+        trustBreakdown: { github: 33, codeQuality: 26, community: 21, onChain: 5 }
+      },
+      project: {
+        title: "DeFi Analytics Dashboard",
+        description: "Building a comprehensive DeFi analytics platform with real-time data visualization, portfolio tracking, and yield farming optimization tools.",
+        tags: ["React", "DeFi", "Web3", "Analytics", "TypeScript"]
+      },
+      loan: {
+        amount: 35000,
+        interestRate: 11.5,
+        tenor: "10 months",
+        tenorDays: 300,
+        funded: 30,
+        target: 35000,
+        status: "funding" as const,
+        timeLeft: "12 days"
+      }
     }
   ];
 
-  const filteredRequests = loanRequests.filter(request => {
-    const matchesSearch = request.borrower.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredMarkets = loanMarkets.filter(market => {
+    const matchesSearch = market.borrower.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         market.project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         market.project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     
     if (filterBy === "all") return matchesSearch;
-    if (filterBy === "high-trust") return matchesSearch && request.trustScore >= 85;
-    if (filterBy === "new") return matchesSearch && request.timeLeft.includes("days");
+    if (filterBy === "funding") return matchesSearch && market.loan.status === "funding";
+    if (filterBy === "active") return matchesSearch && market.loan.status === "active";
+    if (filterBy === "high-trust") return matchesSearch && market.borrower.trustScore >= 85;
     return matchesSearch;
   });
+
+  // Calculate stats
+  const totalRequested = loanMarkets.reduce((sum, market) => sum + market.loan.amount, 0);
+  const avgInterestRate = loanMarkets.reduce((sum, market) => sum + market.loan.interestRate, 0) / loanMarkets.length;
+  const successRate = Math.round((loanMarkets.filter(m => m.loan.status === 'repaid').length / loanMarkets.length) * 100);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -122,61 +161,16 @@ const Marketplace = () => {
               <Link to="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors">
                 Dashboard
               </Link>
-              <Dialog>
-                <DialogTrigger asChild>
+              <CreateMarketModal 
+                trigger={
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    Create Request
+                    Create Market
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Create Loan Request</DialogTitle>
-                    <DialogDescription>
-                      Fill out the details for your funding request. Make sure to provide clear information about your project.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="amount">Loan Amount ($)</Label>
-                        <Input id="amount" placeholder="10000" type="number" />
-                      </div>
-                      <div>
-                        <Label htmlFor="duration">Duration</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select duration" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="3">3 months</SelectItem>
-                            <SelectItem value="6">6 months</SelectItem>
-                            <SelectItem value="12">12 months</SelectItem>
-                            <SelectItem value="24">24 months</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="purpose">Project Title</Label>
-                      <Input id="purpose" placeholder="Brief description of your project" />
-                    </div>
-                    <div>
-                      <Label htmlFor="description">Project Description</Label>
-                      <Textarea 
-                        id="description" 
-                        placeholder="Provide detailed information about your project, technology stack, timeline, and how you plan to use the funds."
-                        rows={4}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="github">GitHub Profile</Label>
-                      <Input id="github" placeholder="https://github.com/yourusername" />
-                    </div>
-                    <Button className="w-full">Submit Request</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                }
+                isStaked={true}
+                stakeAmount={1}
+              />
             </div>
           </div>
         </div>
@@ -185,9 +179,9 @@ const Marketplace = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Funding Marketplace</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Loan Marketplace</h1>
           <p className="text-slate-600">
-            Discover funding opportunities and support innovative developer projects
+            Discover isolated lending markets created by verified developers with fixed rates and clear terms
           </p>
         </div>
 
@@ -209,9 +203,10 @@ const Marketplace = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Requests</SelectItem>
+                <SelectItem value="all">All Markets</SelectItem>
+                <SelectItem value="funding">Seeking Funding</SelectItem>
+                <SelectItem value="active">Active Loans</SelectItem>
                 <SelectItem value="high-trust">High Trust Score</SelectItem>
-                <SelectItem value="new">Recently Added</SelectItem>
               </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={setSortBy}>
@@ -222,142 +217,85 @@ const Marketplace = () => {
                 <SelectItem value="newest">Newest First</SelectItem>
                 <SelectItem value="amount-high">Highest Amount</SelectItem>
                 <SelectItem value="amount-low">Lowest Amount</SelectItem>
+                <SelectItem value="interest-high">Highest Interest</SelectItem>
                 <SelectItem value="trust-score">Trust Score</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Market Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Requests</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Markets</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">24</div>
+              <div className="text-2xl font-bold">{loanMarkets.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {loanMarkets.filter(m => m.loan.status === 'funding').length} seeking funding
+              </p>
             </CardContent>
           </Card>
+          
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Requested</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$340K</div>
+              <div className="text-2xl font-bold">${(totalRequested / 1000).toFixed(0)}K</div>
+              <p className="text-xs text-muted-foreground">
+                Across all markets
+              </p>
             </CardContent>
           </Card>
+          
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Avg Interest Rate</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8.2%</div>
+              <div className="text-2xl font-bold">{avgInterestRate.toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground">
+                Fixed APR
+              </p>
             </CardContent>
           </Card>
+          
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
               <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">87%</div>
+              <div className="text-2xl font-bold">{successRate}%</div>
+              <p className="text-xs text-muted-foreground">
+                Successful repayments
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Loan Requests */}
+        {/* Loan Markets */}
         <div className="space-y-6">
-          {filteredRequests.map((request) => (
-            <Card key={request.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-4">
-                    <img 
-                      src={request.avatar} 
-                      alt={request.name}
-                      className="h-12 w-12 rounded-full object-cover"
-                    />
-                    <div>
-                      <CardTitle className="text-lg">{request.purpose}</CardTitle>
-                      <div className="flex items-center space-x-4 text-sm text-slate-600 mt-1">
-                        <span>{request.name}</span>
-                        <span>•</span>
-                        <span>{request.githubHandle}</span>
-                        <span>•</span>
-                        <span>{request.experience} experience</span>
-                        <span>•</span>
-                        <span>{request.repos} repos</span>
-                        <span>•</span>
-                        <span>{request.followers} followers</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <TrustScoreWidget score={request.trustScore} compact />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-slate-700 mb-4">{request.description}</p>
-                
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {request.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">{tag}</Badge>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div>
-                    <div className="text-sm text-slate-600">Amount</div>
-                    <div className="font-semibold">${request.amount.toLocaleString()}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-600">Interest Rate</div>
-                    <div className="font-semibold">{request.interestRate}% APR</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-600">Duration</div>
-                    <div className="font-semibold">{request.duration}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-600">Time Left</div>
-                    <div className="font-semibold text-orange-600">{request.timeLeft}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="text-sm text-slate-600">
-                      Funded: {request.funded}% of target
-                    </div>
-                    <div className="w-32 bg-slate-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full" 
-                        style={{ width: `${request.funded}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" asChild>
-                      <Link to={`/project/${request.id}`}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Link>
-                    </Button>
-                    <Button asChild>
-                      <Link to={`/developer/${request.borrower}`}>
-                        Fund This Project
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {filteredMarkets.map((market) => (
+            <LoanMarketCard 
+              key={market.id} 
+              market={market}
+              userRole="lender"
+            />
           ))}
         </div>
+
+        {filteredMarkets.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-slate-500 mb-4">No markets found matching your criteria</div>
+            <Button variant="outline">Clear Filters</Button>
+          </div>
+        )}
       </div>
     </div>
   );

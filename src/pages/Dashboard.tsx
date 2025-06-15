@@ -1,69 +1,116 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import LoanMarketCard from "@/components/LoanMarketCard";
+import StakingWidget from "@/components/StakingWidget";
+import CreateMarketModal from "@/components/CreateMarketModal";
+import TrustScoreWidget from "@/components/TrustScoreWidget";
 import { 
-  TrendingUp, 
-  TrendingDown, 
   DollarSign, 
+  TrendingUp, 
   Clock, 
-  Users, 
-  Github,
-  Star,
-  AlertCircle,
-  CheckCircle,
-  ArrowRight
+  Target,
+  Plus,
+  User,
+  Wallet,
+  History,
+  Settings
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
-  const [userRole, setUserRole] = useState<'lender' | 'borrower'>('borrower');
+  const [userRole, setUserRole] = useState<'borrower' | 'lender'>('borrower');
+  const [currentStake, setCurrentStake] = useState(1);
+  const [isStaked, setIsStaked] = useState(true);
 
-  const mockLoans = [
-    {
-      id: 1,
-      borrower: "johndoe",
-      githubHandle: "@johndoe",
-      amount: 5000,
-      interestRate: 8.5,
-      duration: "6 months",
-      purpose: "React Native mobile app development",
-      trustScore: 85,
-      status: "active",
-      nextPayment: "2024-01-15",
-      progress: 60
+  // Mock user data
+  const userData = {
+    borrower: {
+      name: "Alex Rodriguez",
+      githubHandle: "@alexcoder",
+      trustScore: 88,
+      trustBreakdown: { github: 35, codeQuality: 28, community: 20, onChain: 5 },
+      totalBorrowed: 75000,
+      activeLoans: 1,
+      completedLoans: 2,
+      markets: [
+        {
+          id: "1",
+          borrower: {
+            name: "Alex Rodriguez",
+            githubHandle: "@alexcoder",
+            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face",
+            trustScore: 88,
+            trustBreakdown: { github: 35, codeQuality: 28, community: 20, onChain: 5 }
+          },
+          project: {
+            title: "AI-Powered SaaS Platform for SMBs",
+            description: "Building a comprehensive business management platform with AI automation.",
+            tags: ["React", "Node.js", "AI/ML", "SaaS"]
+          },
+          loan: {
+            amount: 50000,
+            interestRate: 12.5,
+            tenor: "12 months",
+            tenorDays: 365,
+            funded: 100,
+            target: 50000,
+            status: "active" as const,
+            startDate: "Jan 15, 2024",
+            dueDate: "Jan 15, 2025"
+          }
+        }
+      ]
     },
-    {
-      id: 2,
-      borrower: "sarahdev",
-      githubHandle: "@sarahcodes",
-      amount: 12000,
-      interestRate: 7.2,
-      duration: "12 months",
-      purpose: "AI/ML startup development",
-      trustScore: 92,
-      status: "pending",
-      nextPayment: null,
-      progress: 0
+    lender: {
+      name: "Lisa Investor",
+      totalInvested: 125000,
+      activeInvestments: 3,
+      totalReturns: 15600,
+      avgReturn: 12.4,
+      investments: [
+        {
+          id: "2",
+          borrower: {
+            name: "Sarah Chen",
+            githubHandle: "@sarahml",
+            avatar: "https://images.unsplash.com/photo-1494790108755-2616b332db29?w=50&h=50&fit=crop&crop=face",
+            trustScore: 92,
+            trustBreakdown: { github: 38, codeQuality: 29, community: 22, onChain: 3 }
+          },
+          project: {
+            title: "AI Code Review Tool",
+            description: "AI tool for automated code review and optimization.",
+            tags: ["Python", "AI/ML", "DevTools"]
+          },
+          loan: {
+            amount: 25000,
+            interestRate: 10.8,
+            tenor: "8 months",
+            tenorDays: 240,
+            funded: 100,
+            target: 25000,
+            status: "active" as const,
+            startDate: "Jan 15, 2024",
+            dueDate: "Sep 15, 2024"
+          },
+          investment: {
+            amount: 5000,
+            expectedReturn: 540,
+            dueDate: "Sep 15, 2024"
+          }
+        }
+      ]
     }
-  ];
+  };
 
-  const myBorrowedLoans = [
-    {
-      id: 1,
-      lender: "techfund",
-      amount: 8000,
-      interestRate: 9.0,
-      duration: "8 months",
-      remainingAmount: 6400,
-      nextPayment: "2024-01-20",
-      dueAmount: 800,
-      status: "active"
-    }
-  ];
+  const handleStakeChange = (amount: number, staked: boolean) => {
+    setCurrentStake(amount);
+    setIsStaked(staked);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -78,30 +125,12 @@ const Dashboard = () => {
               <span className="text-xl font-bold text-slate-900">CoreDev Zero</span>
             </Link>
             <div className="flex items-center space-x-4">
-              <div className="flex bg-slate-100 rounded-lg p-1">
-                <button
-                  onClick={() => setUserRole('borrower')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    userRole === 'borrower' 
-                      ? 'bg-white text-slate-900 shadow-sm' 
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Borrower
-                </button>
-                <button
-                  onClick={() => setUserRole('lender')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    userRole === 'lender' 
-                      ? 'bg-white text-slate-900 shadow-sm' 
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Lender
-                </button>
-              </div>
-              <Button asChild>
-                <Link to="/marketplace">Marketplace</Link>
+              <Link to="/marketplace" className="text-slate-600 hover:text-slate-900 transition-colors">
+                Marketplace
+              </Link>
+              <Button variant="ghost" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
               </Button>
             </div>
           </div>
@@ -109,228 +138,309 @@ const Dashboard = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            {userRole === 'lender' ? 'Lender Dashboard' : 'Developer Dashboard'}
-          </h1>
-          <p className="text-slate-600">
-            {userRole === 'lender' 
-              ? 'Monitor your investments and discover new lending opportunities' 
-              : 'Manage your loans and funding requests'
-            }
-          </p>
+        {/* Header with Role Toggle */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+            <p className="text-slate-600">
+              {userRole === 'borrower' ? 'Manage your loan markets and borrowing activity' : 'Track your investments and lending portfolio'}
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex bg-slate-100 rounded-lg p-1">
+              <Button
+                variant={userRole === 'borrower' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setUserRole('borrower')}
+              >
+                Borrower
+              </Button>
+              <Button
+                variant={userRole === 'lender' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setUserRole('lender')}
+              >
+                Lender
+              </Button>
+            </div>
+          </div>
         </div>
 
-        {userRole === 'lender' ? (
-          // Lender Dashboard
-          <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">$24,500</div>
-                  <p className="text-xs text-muted-foreground">
-                    <TrendingUp className="inline h-3 w-3 mr-1" />
-                    +15% from last month
-                  </p>
-                </CardContent>
-              </Card>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="markets">
+              {userRole === 'borrower' ? 'My Markets' : 'My Investments'}
+            </TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+            {userRole === 'borrower' && <TabsTrigger value="staking">Staking</TabsTrigger>}
+          </TabsList>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Loans</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">8</div>
-                  <p className="text-xs text-muted-foreground">2 pending approval</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Monthly Return</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">$1,240</div>
-                  <p className="text-xs text-muted-foreground">8.2% average APR</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Default Rate</CardTitle>
-                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">2.1%</div>
-                  <p className="text-xs text-muted-foreground">Below market average</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Active Loans */}
-            <Card className="mb-8">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Active Loans</CardTitle>
-                  <CardDescription>Your current lending portfolio</CardDescription>
+          <TabsContent value="overview" className="space-y-6">
+            {userRole === 'borrower' ? (
+              <>
+                {/* Borrower Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Borrowed</CardTitle>
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">${userData.borrower.totalBorrowed.toLocaleString()}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Active Loans</CardTitle>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{userData.borrower.activeLoans}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Completed Loans</CardTitle>
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{userData.borrower.completedLoans}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Trust Score</CardTitle>
+                      <User className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">{userData.borrower.trustScore}</div>
+                    </CardContent>
+                  </Card>
                 </div>
-                <Button asChild>
-                  <Link to="/marketplace">Find New Opportunities</Link>
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockLoans.map((loan) => (
-                    <div key={loan.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <Github className="h-4 w-4 text-slate-600" />
-                          <span className="font-medium">{loan.githubHandle}</span>
-                        </div>
-                        <Badge variant={loan.status === 'active' ? 'default' : 'secondary'}>
-                          {loan.status}
-                        </Badge>
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                          <span className="text-sm text-slate-600">{loan.trustScore}</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold">${loan.amount.toLocaleString()}</div>
-                        <div className="text-sm text-slate-600">{loan.interestRate}% APR</div>
-                      </div>
-                      {loan.status === 'active' && (
-                        <div className="text-right">
-                          <div className="text-sm text-slate-600">Progress</div>
-                          <Progress value={loan.progress} className="w-20" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2">
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Active Markets</CardTitle>
+                        <CreateMarketModal 
+                          trigger={
+                            <Button size="sm">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Create Market
+                            </Button>
+                          }
+                          isStaked={isStaked}
+                          stakeAmount={currentStake}
+                        />
+                      </CardHeader>
+                      <CardContent>
+                        {userData.borrower.markets.length > 0 ? (
+                          <div className="space-y-4">
+                            {userData.borrower.markets.map((market) => (
+                              <LoanMarketCard 
+                                key={market.id} 
+                                market={market}
+                                userRole="borrower"
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-slate-500">
+                            No active markets. Create your first loan market to get started.
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <TrustScoreWidget 
+                      score={userData.borrower.trustScore}
+                      breakdown={userData.borrower.trustBreakdown}
+                    />
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </>
-        ) : (
-          // Borrower Dashboard
-          <>
-            {/* Profile Card */}
-            <Card className="mb-8">
+              </>
+            ) : (
+              <>
+                {/* Lender Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">${userData.lender.totalInvested.toLocaleString()}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Active Investments</CardTitle>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{userData.lender.activeInvestments}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Returns</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">${userData.lender.totalReturns.toLocaleString()}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Avg Return</CardTitle>
+                      <Percent className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-blue-600">{userData.lender.avgReturn}%</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Active Investments</CardTitle>
+                    <Link to="/marketplace">
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Find Opportunities
+                      </Button>
+                    </Link>
+                  </CardHeader>
+                  <CardContent>
+                    {userData.lender.investments.length > 0 ? (
+                      <div className="space-y-4">
+                        {userData.lender.investments.map((investment) => (
+                          <div key={investment.id} className="border rounded-lg p-4">
+                            <LoanMarketCard 
+                              market={investment}
+                              userRole="lender"
+                            />
+                            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                              <div className="grid grid-cols-3 gap-4 text-sm">
+                                <div>
+                                  <span className="text-slate-600">Your Investment:</span>
+                                  <div className="font-medium">${investment.investment.amount.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                  <span className="text-slate-600">Expected Return:</span>
+                                  <div className="font-medium text-green-600">
+                                    ${investment.investment.expectedReturn.toLocaleString()}
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-slate-600">Due Date:</span>
+                                  <div className="font-medium">{investment.investment.dueDate}</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-slate-500">
+                        No active investments. Browse the marketplace to find opportunities.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="markets">
+            <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center">
-                      <Github className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">@johndoe</CardTitle>
-                      <CardDescription>Full Stack Developer • 3 years experience</CardDescription>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="text-lg font-semibold">85</span>
-                    </div>
-                    <Badge variant="outline">Trust Score</Badge>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Borrowed</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">$8,000</div>
-                  <p className="text-xs text-muted-foreground">1 active loan</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Next Payment</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">$800</div>
-                  <p className="text-xs text-muted-foreground">Due Jan 20, 2024</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Available Credit</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">$12,000</div>
-                  <p className="text-xs text-muted-foreground">Based on trust score</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Active Loans */}
-            <Card className="mb-8">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>My Loans</CardTitle>
-                  <CardDescription>Your current borrowing status</CardDescription>
-                </div>
-                <Button asChild>
-                  <Link to="/marketplace">Request New Loan</Link>
-                </Button>
+                <CardTitle>
+                  {userRole === 'borrower' ? 'My Loan Markets' : 'My Investment Portfolio'}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {myBorrowedLoans.map((loan) => (
-                    <div key={loan.id} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-4">
-                          <div>
-                            <div className="font-medium">Loan from @{loan.lender}</div>
-                            <div className="text-sm text-slate-600">{loan.interestRate}% APR • {loan.duration}</div>
-                          </div>
-                          <Badge className="bg-green-100 text-green-700">Active</Badge>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold">${loan.amount.toLocaleString()}</div>
-                          <div className="text-sm text-slate-600">${loan.remainingAmount.toLocaleString()} remaining</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 mr-4">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Progress</span>
-                            <span>{Math.round(((loan.amount - loan.remainingAmount) / loan.amount) * 100)}%</span>
-                          </div>
-                          <Progress value={((loan.amount - loan.remainingAmount) / loan.amount) * 100} />
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-slate-600">Next payment</div>
-                          <div className="font-semibold">${loan.dueAmount}</div>
-                          <div className="text-xs text-slate-600">{loan.nextPayment}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-center py-8 text-slate-500">
+                  Detailed {userRole === 'borrower' ? 'market management' : 'investment tracking'} interface coming soon.
                 </div>
               </CardContent>
             </Card>
-          </>
-        )}
+          </TabsContent>
+
+          <TabsContent value="history">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <History className="h-5 w-5" />
+                  <span>Transaction History</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-slate-500">
+                  Transaction history and analytics coming soon.
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {userRole === 'borrower' && (
+            <TabsContent value="staking">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <StakingWidget
+                  currentStake={currentStake}
+                  isStaked={isStaked}
+                  onStakeChange={handleStakeChange}
+                />
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Staking Benefits</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                        <div>
+                          <div className="font-medium">Market Creation Access</div>
+                          <div className="text-sm text-slate-600">
+                            Staking tCORE allows you to create isolated lending markets
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2"></div>
+                        <div>
+                          <div className="font-medium">Trust Signal</div>
+                          <div className="text-sm text-slate-600">
+                            Demonstrates commitment and increases lender confidence
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
+                        <div>
+                          <div className="font-medium">Future Yield</div>
+                          <div className="text-sm text-slate-600">
+                            Staked tCORE will earn native staking rewards (coming soon)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     </div>
   );
