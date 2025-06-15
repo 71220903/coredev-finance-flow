@@ -1,14 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoanMarketCard from "@/components/LoanMarketCard";
 import CreateMarketModal from "@/components/CreateMarketModal";
+import AdvancedSearch from "@/components/AdvancedSearch";
 import { 
-  Search, 
-  Filter, 
   DollarSign,
   TrendingUp,
   Users,
@@ -18,9 +14,7 @@ import {
 import { Link } from "react-router-dom";
 
 const Marketplace = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
-  const [filterBy, setFilterBy] = useState("all");
+  const [searchFilters, setSearchFilters] = useState<any>({});
 
   // Enhanced mock data with complete loan lifecycle
   const loanMarkets = [
@@ -129,21 +123,55 @@ const Marketplace = () => {
   ];
 
   const filteredMarkets = loanMarkets.filter(market => {
-    const matchesSearch = market.borrower.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         market.project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         market.project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    // Enhanced filtering logic with advanced search
+    let matches = true;
     
-    if (filterBy === "all") return matchesSearch;
-    if (filterBy === "funding") return matchesSearch && market.loan.status === "funding";
-    if (filterBy === "active") return matchesSearch && market.loan.status === "active";
-    if (filterBy === "high-trust") return matchesSearch && market.borrower.trustScore >= 85;
-    return matchesSearch;
+    if (searchFilters.query) {
+      const query = searchFilters.query.toLowerCase();
+      matches = matches && (
+        market.borrower.name.toLowerCase().includes(query) ||
+        market.project.title.toLowerCase().includes(query) ||
+        market.project.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+    
+    if (searchFilters.minAmount) {
+      matches = matches && market.loan.amount >= searchFilters.minAmount;
+    }
+    
+    if (searchFilters.maxAmount) {
+      matches = matches && market.loan.amount <= searchFilters.maxAmount;
+    }
+    
+    if (searchFilters.minTrustScore) {
+      matches = matches && market.borrower.trustScore >= searchFilters.minTrustScore;
+    }
+    
+    if (searchFilters.status && searchFilters.status.length > 0) {
+      matches = matches && searchFilters.status.includes(market.loan.status);
+    }
+    
+    if (searchFilters.sectors && searchFilters.sectors.length > 0) {
+      matches = matches && searchFilters.sectors.some(sector => 
+        market.project.tags.includes(sector)
+      );
+    }
+    
+    return matches;
   });
 
   // Calculate stats
   const totalRequested = loanMarkets.reduce((sum, market) => sum + market.loan.amount, 0);
   const avgInterestRate = loanMarkets.reduce((sum, market) => sum + market.loan.interestRate, 0) / loanMarkets.length;
   const successRate = Math.round((loanMarkets.filter(m => m.loan.status === 'repaid').length / loanMarkets.length) * 100);
+
+  const handleFiltersChange = (filters: any) => {
+    setSearchFilters(filters);
+  };
+
+  const handleFiltersReset = () => {
+    setSearchFilters({});
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -185,43 +213,12 @@ const Marketplace = () => {
           </p>
         </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search by developer, project, or technology..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={filterBy} onValueChange={setFilterBy}>
-              <SelectTrigger className="w-full lg:w-48">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Markets</SelectItem>
-                <SelectItem value="funding">Seeking Funding</SelectItem>
-                <SelectItem value="active">Active Loans</SelectItem>
-                <SelectItem value="high-trust">High Trust Score</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="amount-high">Highest Amount</SelectItem>
-                <SelectItem value="amount-low">Lowest Amount</SelectItem>
-                <SelectItem value="interest-high">Highest Interest</SelectItem>
-                <SelectItem value="trust-score">Trust Score</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Advanced Search */}
+        <div className="mb-8">
+          <AdvancedSearch 
+            onFiltersChange={handleFiltersChange}
+            onReset={handleFiltersReset}
+          />
         </div>
 
         {/* Market Stats */}
@@ -293,7 +290,7 @@ const Marketplace = () => {
         {filteredMarkets.length === 0 && (
           <div className="text-center py-12">
             <div className="text-slate-500 mb-4">No markets found matching your criteria</div>
-            <Button variant="outline">Clear Filters</Button>
+            <Button variant="outline" onClick={handleFiltersReset}>Clear Filters</Button>
           </div>
         )}
       </div>

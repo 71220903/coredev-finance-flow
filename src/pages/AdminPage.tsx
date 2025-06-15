@@ -1,11 +1,24 @@
 
 import AdminPanel from "@/components/AdminPanel";
 import MobileNavigation from "@/components/MobileNavigation";
+import AdvancedSearch from "@/components/AdvancedSearch";
+import NotificationCenter from "@/components/NotificationCenter";
+import SecondaryMarket from "@/components/SecondaryMarket";
+import PerformanceOptimizer from "@/components/PerformanceOptimizer";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AdminPage = () => {
+  const handleFiltersChange = (filters: any) => {
+    console.log("Filters changed:", filters);
+  };
+
+  const handleReset = () => {
+    console.log("Filters reset");
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Desktop Navigation */}
@@ -37,7 +50,38 @@ const AdminPage = () => {
       <MobileNavigation />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 lg:pb-8">
-        <AdminPanel />
+        <Tabs defaultValue="panel" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="panel">Admin Panel</TabsTrigger>
+            <TabsTrigger value="search">Advanced Search</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="market">Secondary Market</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="panel">
+            <AdminPanel />
+          </TabsContent>
+
+          <TabsContent value="search">
+            <AdvancedSearch 
+              onFiltersChange={handleFiltersChange}
+              onReset={handleReset}
+            />
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <NotificationCenter />
+          </TabsContent>
+
+          <TabsContent value="market">
+            <SecondaryMarket />
+          </TabsContent>
+
+          <TabsContent value="performance">
+            <PerformanceOptimizer />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

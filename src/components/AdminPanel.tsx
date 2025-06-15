@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { MarketAnalytics } from "./MarketAnalytics";
 import {
   Settings,
   Users,
@@ -17,7 +20,14 @@ import {
   XCircle,
   Plus,
   Search,
-  Filter
+  Filter,
+  Ban,
+  Mail,
+  Bell,
+  Database,
+  Key,
+  Globe,
+  Zap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -45,6 +55,18 @@ const AdminPanel = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [newUserAddress, setNewUserAddress] = useState("");
+  const [systemSettings, setSystemSettings] = useState({
+    platformFee: 2.0,
+    minLoanAmount: 1000,
+    maxLoanAmount: 100000,
+    defaultInterestRate: 12.0,
+    maxLoanTerm: 24,
+    autoApprovalThreshold: 85,
+    maintenanceMode: false,
+    newRegistrations: true,
+    emailNotifications: true,
+    slackIntegration: false
+  });
 
   const [whitelistUsers, setWhitelistUsers] = useState<WhitelistUser[]>([
     {
@@ -159,6 +181,28 @@ const AdminPanel = () => {
     }
   };
 
+  const updateSystemSetting = (key: string, value: any) => {
+    setSystemSettings(prev => ({ ...prev, [key]: value }));
+    toast({
+      title: "Setting Updated ⚙️",
+      description: `${key.replace(/([A-Z])/g, ' $1')} has been updated successfully.`
+    });
+  };
+
+  const sendBulkNotification = () => {
+    toast({
+      title: "Notification Sent 📢",
+      description: "Bulk notification has been sent to all users."
+    });
+  };
+
+  const exportData = (type: string) => {
+    toast({
+      title: "Export Started 📊",
+      description: `${type} data export has been initiated. You'll receive an email when complete.`
+    });
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
       {/* Header */}
@@ -166,7 +210,7 @@ const AdminPanel = () => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Settings className="h-5 w-5 text-blue-600" />
-            <span>Admin Panel</span>
+            <span>Advanced Admin Panel</span>
           </CardTitle>
         </CardHeader>
       </Card>
@@ -224,12 +268,15 @@ const AdminPanel = () => {
         </Card>
       </div>
 
-      {/* Admin Tabs */}
+      {/* Enhanced Admin Tabs */}
       <Tabs defaultValue="whitelist">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="whitelist">Whitelist Management</TabsTrigger>
-          <TabsTrigger value="loans">Loan Monitoring</TabsTrigger>
-          <TabsTrigger value="settings">Platform Settings</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="whitelist">Users</TabsTrigger>
+          <TabsTrigger value="loans">Loans</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="system">System</TabsTrigger>
         </TabsList>
 
         <TabsContent value="whitelist" className="space-y-4">
@@ -334,27 +381,311 @@ const AdminPanel = () => {
         <TabsContent value="loans" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Loan Monitoring</CardTitle>
+              <CardTitle>Loan Management</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-slate-500">
-                Loan monitoring features coming soon...
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-yellow-600">23</div>
+                      <div className="text-sm text-slate-600">Pending Review</div>
+                      <Button size="sm" className="mt-2">Review All</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">5</div>
+                      <div className="text-sm text-slate-600">Overdue</div>
+                      <Button size="sm" variant="destructive" className="mt-2">Take Action</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">156</div>
+                      <div className="text-sm text-slate-600">Active Loans</div>
+                      <Button size="sm" variant="outline" className="mt-2">View Details</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-medium">Recent Loan Applications</h3>
+                  <Button size="sm" onClick={() => exportData("loans")}>
+                    Export Data
+                  </Button>
+                </div>
+                
+                <div className="text-center py-8 text-slate-500">
+                  Detailed loan management interface would be implemented here...
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        <TabsContent value="analytics" className="space-y-4">
+          <MarketAnalytics />
+        </TabsContent>
+
         <TabsContent value="settings" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <DollarSign className="h-4 w-4" />
+                  <span>Platform Settings</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Platform Fee (%)</Label>
+                  <Input
+                    type="number"
+                    value={systemSettings.platformFee}
+                    onChange={(e) => updateSystemSetting('platformFee', parseFloat(e.target.value))}
+                    step="0.1"
+                    min="0"
+                    max="10"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Minimum Loan Amount ($)</Label>
+                  <Input
+                    type="number"
+                    value={systemSettings.minLoanAmount}
+                    onChange={(e) => updateSystemSetting('minLoanAmount', parseInt(e.target.value))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Maximum Loan Amount ($)</Label>
+                  <Input
+                    type="number"
+                    value={systemSettings.maxLoanAmount}
+                    onChange={(e) => updateSystemSetting('maxLoanAmount', parseInt(e.target.value))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Default Interest Rate (%)</Label>
+                  <Input
+                    type="number"
+                    value={systemSettings.defaultInterestRate}
+                    onChange={(e) => updateSystemSetting('defaultInterestRate', parseFloat(e.target.value))}
+                    step="0.1"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Shield className="h-4 w-4" />
+                  <span>Security & Access</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Auto-Approval Trust Threshold</Label>
+                  <Input
+                    type="number"
+                    value={systemSettings.autoApprovalThreshold}
+                    onChange={(e) => updateSystemSetting('autoApprovalThreshold', parseInt(e.target.value))}
+                    min="0"
+                    max="100"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label>Maintenance Mode</Label>
+                    <p className="text-sm text-slate-600">Disable platform access for maintenance</p>
+                  </div>
+                  <Switch
+                    checked={systemSettings.maintenanceMode}
+                    onCheckedChange={(checked) => updateSystemSetting('maintenanceMode', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label>New User Registrations</Label>
+                    <p className="text-sm text-slate-600">Allow new users to register</p>
+                  </div>
+                  <Switch
+                    checked={systemSettings.newRegistrations}
+                    onCheckedChange={(checked) => updateSystemSetting('newRegistrations', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Platform Settings</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <Bell className="h-4 w-4" />
+                <span>Notification Management</span>
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-slate-500">
-                Platform configuration settings coming soon...
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium">Send Bulk Notification</h3>
+                  <div className="space-y-2">
+                    <Label>Message Title</Label>
+                    <Input placeholder="Enter notification title..." />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Message Content</Label>
+                    <Textarea placeholder="Enter notification message..." rows={4} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Target Audience</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select audience" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Users</SelectItem>
+                        <SelectItem value="borrowers">Borrowers Only</SelectItem>
+                        <SelectItem value="lenders">Lenders Only</SelectItem>
+                        <SelectItem value="high-trust">High Trust Users</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={sendBulkNotification} className="w-full">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Send Notification
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-medium">Notification Settings</h3>
+                  
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <Label>Email Notifications</Label>
+                    <Switch
+                      checked={systemSettings.emailNotifications}
+                      onCheckedChange={(checked) => updateSystemSetting('emailNotifications', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <Label>Slack Integration</Label>
+                    <Switch
+                      checked={systemSettings.slackIntegration}
+                      onCheckedChange={(checked) => updateSystemSetting('slackIntegration', checked)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Notification Templates</Label>
+                    <Button variant="outline" className="w-full justify-start">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Template
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="system" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Database className="h-4 w-4" />
+                  <span>Data Management</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => exportData("users")}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Export User Data
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => exportData("transactions")}
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Export Transaction Data
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => exportData("analytics")}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Export Analytics Data
+                </Button>
+
+                <div className="pt-4 border-t">
+                  <Button variant="destructive" className="w-full">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Emergency Stop
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Key className="h-4 w-4" />
+                  <span>API & Integrations</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>API Rate Limiting</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select rate limit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="100">100 requests/hour</SelectItem>
+                      <SelectItem value="500">500 requests/hour</SelectItem>
+                      <SelectItem value="1000">1000 requests/hour</SelectItem>
+                      <SelectItem value="unlimited">Unlimited</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button variant="outline" className="w-full justify-start">
+                  <Globe className="h-4 w-4 mr-2" />
+                  Webhook Configuration
+                </Button>
+
+                <Button variant="outline" className="w-full justify-start">
+                  <Zap className="h-4 w-4 mr-2" />
+                  API Key Management
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
