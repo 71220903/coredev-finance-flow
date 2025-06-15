@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MarketAnalytics } from "./MarketAnalytics";
+import MarketAnalytics from "./MarketAnalytics";
 import {
   Settings,
   Users,
