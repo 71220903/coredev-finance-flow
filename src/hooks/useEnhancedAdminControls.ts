@@ -15,7 +15,7 @@ export const useEnhancedAdminControls = () => {
     totalStaked: '0'
   });
 
-  // Check if current user has admin role with multiple methods
+  // Enhanced admin role check with multiple methods
   const checkAdminRole = useCallback(async (): Promise<boolean> => {
     if (!address || !marketFactory || !isReady) {
       console.log('Admin role check failed - missing requirements');
@@ -25,11 +25,11 @@ export const useEnhancedAdminControls = () => {
     try {
       console.log('Checking admin role for:', address);
 
-      // Method 1: Check DEFAULT_ADMIN_ROLE
+      // Method 1: Check DEFAULT_ADMIN_ROLE (0x00)
       try {
-        const DEFAULT_ADMIN_ROLE = await marketFactory.DEFAULT_ADMIN_ROLE();
+        const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000';
         const hasAdminRole = await marketFactory.hasRole(DEFAULT_ADMIN_ROLE, address);
-        console.log('Admin role check via DEFAULT_ADMIN_ROLE:', hasAdminRole);
+        console.log('Admin role check via DEFAULT_ADMIN_ROLE (0x00):', hasAdminRole);
         if (hasAdminRole) return true;
       } catch (error) {
         console.log('DEFAULT_ADMIN_ROLE not available:', error);
@@ -39,20 +39,30 @@ export const useEnhancedAdminControls = () => {
       try {
         const owner = await marketFactory.owner();
         const isOwner = owner.toLowerCase() === address.toLowerCase();
-        console.log('Admin role check via owner:', isOwner);
+        console.log('Admin role check via owner:', { owner, address, isOwner });
         if (isOwner) return true;
       } catch (error) {
         console.log('Owner method not available:', error);
       }
 
-      // Method 3: Check PAUSER_ROLE
+      // Method 3: Check ADMIN_ROLE if available
       try {
-        const PAUSER_ROLE = await marketFactory.PAUSER_ROLE();
-        const hasPauserRole = await marketFactory.hasRole(PAUSER_ROLE, address);
-        console.log('Admin role check via PAUSER_ROLE:', hasPauserRole);
-        if (hasPauserRole) return true;
+        const ADMIN_ROLE = await marketFactory.ADMIN_ROLE();
+        const hasAdminRole = await marketFactory.hasRole(ADMIN_ROLE, address);
+        console.log('Admin role check via ADMIN_ROLE:', hasAdminRole);
+        if (hasAdminRole) return true;
       } catch (error) {
-        console.log('PAUSER_ROLE not available:', error);
+        console.log('ADMIN_ROLE not available:', error);
+      }
+
+      // Method 4: Check deployer if available
+      try {
+        const deployer = await marketFactory.getDeployer();
+        const isDeployer = deployer.toLowerCase() === address.toLowerCase();
+        console.log('Admin role check via deployer:', isDeployer);
+        if (isDeployer) return true;
+      } catch (error) {
+        console.log('Deployer method not available:', error);
       }
 
       return false;
@@ -170,7 +180,7 @@ export const useEnhancedAdminControls = () => {
     }
   }, [marketFactory, isReady, checkAdminRole, toast]);
 
-  // Grant developer role
+  // Grant developer role with proper ABI method
   const grantDeveloperRole = useCallback(async (userAddress: string): Promise<boolean> => {
     if (!marketFactory || !isReady) {
       console.log('Cannot grant role - contract not ready');
@@ -191,7 +201,23 @@ export const useEnhancedAdminControls = () => {
       setLoading(true);
       console.log('Attempting to grant developer role to:', userAddress);
 
-      const tx = await marketFactory.grantDeveloperRole(userAddress);
+      // Try different methods to grant developer role
+      let tx;
+      try {
+        // Method 1: Use grantDeveloperRole if available
+        tx = await marketFactory.grantDeveloperRole(userAddress);
+      } catch (error) {
+        console.log('grantDeveloperRole not available, trying grantRole...');
+        // Method 2: Use grantRole with DEVELOPER_ROLE
+        try {
+          const DEVELOPER_ROLE = await marketFactory.DEVELOPER_ROLE();
+          tx = await marketFactory.grantRole(DEVELOPER_ROLE, userAddress);
+        } catch (roleError) {
+          console.error('Both grant methods failed:', error, roleError);
+          throw new Error('Developer role granting not supported by contract');
+        }
+      }
+
       console.log('Grant role transaction submitted:', tx.hash);
       
       toast({
@@ -222,9 +248,9 @@ export const useEnhancedAdminControls = () => {
     }
   }, [marketFactory, isReady, checkAdminRole, toast]);
 
-  // Check platform status
+  // Check platform status with proper error handling
   const fetchPlatformStatus = useCallback(async () => {
-    if (!marketFactory || !stakingVault || !isReady) {
+    if (!marketFactory || !isReady) {
       console.log('Cannot fetch status - contracts not ready');
       return;
     }
@@ -232,20 +258,21 @@ export const useEnhancedAdminControls = () => {
     try {
       console.log('Fetching platform status...');
       
-      const [isPaused, totalStaked] = await Promise.allSettled([
+      // Use Promise.allSettled to handle potential method failures
+      const [pausedResult, stakedResult] = await Promise.allSettled([
         marketFactory.paused(),
-        stakingVault.totalStakedInVault ? stakingVault.totalStakedInVault() : Promise.resolve('0')
+        stakingVault ? stakingVault.totalSupply().catch(() => '0') : Promise.resolve('0')
       ]);
 
-      const pausedResult = isPaused.status === 'fulfilled' ? isPaused.value : false;
-      const stakedResult = totalStaked.status === 'fulfilled' ? totalStaked.value.toString() : '0';
+      const isPaused = pausedResult.status === 'fulfilled' ? pausedResult.value : false;
+      const totalStaked = stakedResult.status === 'fulfilled' ? stakedResult.value.toString() : '0';
 
-      console.log('Platform status:', { isPaused: pausedResult, totalStaked: stakedResult });
+      console.log('Platform status fetched:', { isPaused, totalStaked });
 
       setSystemStatus({
-        isPaused: pausedResult,
+        isPaused,
         totalMarkets: 0, // Will be updated when we have a way to count markets
-        totalStaked: stakedResult
+        totalStaked
       });
 
     } catch (error) {

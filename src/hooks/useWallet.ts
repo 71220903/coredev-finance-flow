@@ -43,17 +43,28 @@ export const useWallet = () => {
   }, []);
 
   const checkConnection = async () => {
-    if (!window.ethereum) return;
+    if (!window.ethereum) {
+      console.log('No ethereum provider found');
+      return;
+    }
 
     try {
+      console.log('Checking wallet connection...');
       const provider = new ethers.BrowserProvider(window.ethereum);
       const accounts = await provider.listAccounts();
       
       if (accounts.length > 0) {
+        console.log('Wallet already connected, getting signer...');
         const signer = await provider.getSigner();
         const address = await signer.getAddress();
         const network = await provider.getNetwork();
         const balance = await provider.getBalance(address);
+
+        console.log('Wallet connected:', {
+          address,
+          chainId: Number(network.chainId),
+          balance: ethers.formatEther(balance)
+        });
 
         setWalletState({
           address,
@@ -63,6 +74,8 @@ export const useWallet = () => {
           chainId: Number(network.chainId),
           balance: ethers.formatEther(balance)
         });
+      } else {
+        console.log('No accounts connected');
       }
     } catch (error) {
       console.error('Error checking wallet connection:', error);
@@ -82,6 +95,7 @@ export const useWallet = () => {
     setIsConnecting(true);
 
     try {
+      console.log('Requesting account access...');
       // Request account access
       await window.ethereum.request({ method: 'eth_requestAccounts' });
       
@@ -90,6 +104,12 @@ export const useWallet = () => {
       const address = await signer.getAddress();
       const network = await provider.getNetwork();
       const balance = await provider.getBalance(address);
+
+      console.log('Wallet connected successfully:', {
+        address,
+        chainId: Number(network.chainId),
+        balance: ethers.formatEther(balance)
+      });
 
       setWalletState({
         address,
@@ -102,6 +122,7 @@ export const useWallet = () => {
 
       // Check if we're on the correct network
       if (Number(network.chainId) !== CORE_TESTNET_CONFIG.chainId) {
+        console.log('Wrong network detected, switching to Core Testnet...');
         await switchToCore();
       }
 
@@ -126,11 +147,14 @@ export const useWallet = () => {
     if (!window.ethereum) return;
 
     try {
+      console.log('Switching to Core Testnet...');
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: `0x${CORE_TESTNET_CONFIG.chainId.toString(16)}` }],
       });
+      console.log('Successfully switched to Core Testnet');
     } catch (switchError: any) {
+      console.log('Switch error, attempting to add network...', switchError);
       // This error code indicates that the chain has not been added to MetaMask
       if (switchError.code === 4902) {
         try {
@@ -144,6 +168,7 @@ export const useWallet = () => {
               blockExplorerUrls: [CORE_TESTNET_CONFIG.blockExplorer]
             }],
           });
+          console.log('Successfully added Core Testnet to wallet');
         } catch (addError) {
           console.error('Error adding Core network:', addError);
           toast({
@@ -157,6 +182,7 @@ export const useWallet = () => {
   };
 
   const disconnectWallet = () => {
+    console.log('Disconnecting wallet...');
     setWalletState({
       address: null,
       isConnected: false,
@@ -173,6 +199,7 @@ export const useWallet = () => {
   };
 
   const handleAccountsChanged = (accounts: string[]) => {
+    console.log('Accounts changed:', accounts);
     if (accounts.length === 0) {
       disconnectWallet();
     } else {
@@ -181,17 +208,20 @@ export const useWallet = () => {
   };
 
   const handleChainChanged = (chainId: string) => {
+    console.log('Chain changed:', chainId);
     window.location.reload();
   };
 
   const updateBalance = useCallback(async () => {
     if (walletState.provider && walletState.address) {
       try {
+        console.log('Updating balance...');
         const balance = await walletState.provider.getBalance(walletState.address);
         setWalletState(prev => ({
           ...prev,
           balance: ethers.formatEther(balance)
         }));
+        console.log('Balance updated:', ethers.formatEther(balance));
       } catch (error) {
         console.error('Error updating balance:', error);
       }
