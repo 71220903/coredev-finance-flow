@@ -17,7 +17,8 @@ import {
   User,
   Wallet,
   History,
-  Settings
+  Settings,
+  Percent
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
