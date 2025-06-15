@@ -29,12 +29,15 @@ import {
   TrendingUp,
   DollarSign
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useWallet } from "@/hooks/useWallet";
+import { useToast } from "@/hooks/use-toast";
 
 const NavigationSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { isAdmin } = useUserRole();
   const { isConnected } = useWallet();
 
@@ -67,7 +70,63 @@ const NavigationSidebar = () => {
 
   const handleQuickAction = (action: string) => {
     console.log(`Quick action: ${action}`);
-    // Implement quick actions
+    
+    switch (action) {
+      case "create-market":
+        if (!isConnected) {
+          toast({
+            title: "Wallet Connection Required",
+            description: "Please connect your wallet to create a market",
+            variant: "destructive"
+          });
+          return;
+        }
+        // Navigate to marketplace with create market modal or form
+        navigate("/marketplace?action=create");
+        toast({
+          title: "Create Market",
+          description: "Create market functionality will be available soon",
+        });
+        break;
+      
+      case "deposit":
+        if (!isConnected) {
+          toast({
+            title: "Wallet Connection Required", 
+            description: "Please connect your wallet to deposit funds",
+            variant: "destructive"
+          });
+          return;
+        }
+        // Navigate to dashboard with deposit section
+        navigate("/dashboard?section=deposit");
+        toast({
+          title: "Deposit Funds",
+          description: "Deposit functionality will be available soon",
+        });
+        break;
+        
+      default:
+        console.log(`Unhandled action: ${action}`);
+    }
+  };
+
+  const handleSettings = () => {
+    navigate("/settings");
+  };
+
+  const handleHelpSupport = () => {
+    // Open help documentation or support page
+    toast({
+      title: "Help & Support",
+      description: "Opening help documentation...",
+    });
+    
+    // You can either navigate to a help page or open external documentation
+    // For now, we'll show a toast and could open external docs
+    setTimeout(() => {
+      window.open("https://docs.lovable.dev/", "_blank");
+    }, 1000);
   };
 
   return (
@@ -177,11 +236,19 @@ const NavigationSidebar = () => {
       {/* Sidebar Footer */}
       <SidebarFooter className="p-4">
         <div className="space-y-2">
-          <Button variant="ghost" className="w-full justify-start">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start"
+            onClick={handleSettings}
+          >
             <Settings className="h-4 w-4 mr-2" />
             Settings
           </Button>
-          <Button variant="ghost" className="w-full justify-start">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start"
+            onClick={handleHelpSupport}
+          >
             <HelpCircle className="h-4 w-4 mr-2" />
             Help & Support
           </Button>
