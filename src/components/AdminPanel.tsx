@@ -11,7 +11,7 @@ import { AdminHeader } from "./admin/AdminHeader";
 import { PlatformStats } from "./admin/PlatformStats";
 import { UserManagement } from "./admin/UserManagement";
 import MarketAnalytics from "./MarketAnalytics";
-import { useAdminControls } from "@/hooks/useAdminControls";
+import { useEnhancedAdminControls } from "@/hooks/useEnhancedAdminControls";
 import { useNotificationSystem } from "@/hooks/useNotificationSystem";
 import {
   Users,
@@ -34,19 +34,15 @@ interface WhitelistUser {
 }
 
 const AdminPanel = () => {
-  const [platformFeeInput, setPlatformFeeInput] = useState("");
-
-  // Use the admin controls hook
+  // Use the enhanced admin controls hook
   const {
-    systemSettings,
     loading: adminLoading,
-    grantDeveloperRole,
-    revokeDeveloperRole,
-    togglePlatformPause,
-    updatePlatformFee,
+    systemStatus,
     checkAdminRole,
-    fetchSystemStats
-  } = useAdminControls();
+    togglePlatformPause,
+    grantDeveloperRole,
+    fetchPlatformStatus
+  } = useEnhancedAdminControls();
 
   // Use notification system
   const { notifications, unreadCount, markAllAsRead } = useNotificationSystem();
@@ -76,7 +72,7 @@ const AdminPanel = () => {
   ]);
 
   const platformStats = {
-    totalUsers: systemSettings.totalUsers,
+    totalUsers: systemStatus.totalMarkets,
     activeLoans: 23,
     totalVolume: 2850000,
     successRate: 94.2,
@@ -89,16 +85,11 @@ const AdminPanel = () => {
       const adminStatus = await checkAdminRole();
       setIsAdmin(adminStatus);
       if (adminStatus) {
-        fetchSystemStats();
+        fetchPlatformStatus();
       }
     };
     checkRole();
-  }, [checkAdminRole, fetchSystemStats]);
-
-  // Initialize platform fee input
-  useEffect(() => {
-    setPlatformFeeInput(systemSettings.platformFee.toString());
-  }, [systemSettings.platformFee]);
+  }, [checkAdminRole, fetchPlatformStatus]);
 
   const handleApproveUser = async (userId: string) => {
     const user = whitelistUsers.find(u => u.id === userId);
@@ -140,14 +131,6 @@ const AdminPanel = () => {
     }
   };
 
-  const handleUpdatePlatformFee = async () => {
-    const newFee = parseFloat(platformFeeInput);
-    if (isNaN(newFee) || newFee < 0 || newFee > 10) {
-      return;
-    }
-    await updatePlatformFee(newFee);
-  };
-
   if (!isAdmin) {
     return (
       <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
@@ -167,7 +150,7 @@ const AdminPanel = () => {
       {/* Header */}
       <Card>
         <AdminHeader 
-          isPaused={systemSettings.isPaused}
+          isPaused={systemStatus.isPaused}
           onTogglePause={togglePlatformPause}
           loading={adminLoading}
         />
@@ -196,7 +179,7 @@ const AdminPanel = () => {
             users={whitelistUsers}
             onApproveUser={handleApproveUser}
             onRejectUser={handleRejectUser}
-            onRevokeUser={revokeDeveloperRole}
+            onRevokeUser={() => {}} // Placeholder - would implement role revocation
             onAddUser={handleAddUser}
             loading={adminLoading}
           />
@@ -211,25 +194,35 @@ const AdminPanel = () => {
             <Card>
               <CardContent className="p-6 space-y-4">
                 <div className="space-y-2">
-                  <Label>Platform Fee (%)</Label>
-                  <div className="flex space-x-2">
-                    <Input
-                      type="number"
-                      value={platformFeeInput}
-                      onChange={(e) => setPlatformFeeInput(e.target.value)}
-                      step="0.1"
-                      min="0"
-                      max="10"
-                      className="flex-1"
-                    />
-                    <Button 
-                      onClick={handleUpdatePlatformFee}
-                      disabled={adminLoading || platformFeeInput === systemSettings.platformFee.toString()}
-                    >
-                      Update
-                    </Button>
+                  <Label>Platform Status</Label>
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">
+                        Platform is {systemStatus.isPaused ? 'Paused' : 'Active'}
+                      </div>
+                      <p className="text-sm text-slate-600">
+                        {systemStatus.isPaused 
+                          ? 'All operations are suspended' 
+                          : 'All systems operational'
+                        }
+                      </p>
+                    </div>
+                    <Badge variant={systemStatus.isPaused ? "destructive" : "default"}>
+                      {systemStatus.isPaused ? "PAUSED" : "ACTIVE"}
+                    </Badge>
                   </div>
-                  <p className="text-sm text-slate-600">Current: {systemSettings.platformFee}%</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Total Staked in Vault</Label>
+                  <div className="p-3 border rounded-lg">
+                    <div className="text-lg font-semibold">
+                      {parseFloat(systemStatus.totalStaked) / 1e18} tCORE2
+                    </div>
+                    <p className="text-sm text-slate-600">
+                      Current staking vault balance
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -239,7 +232,7 @@ const AdminPanel = () => {
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <Label>Maintenance Mode</Label>
-                    <p className="text-sm text-slate-600">Disable platform access for maintenance</p>
+                    <p className="text-sm text-slate-600">Advanced system controls</p>
                   </div>
                   <Switch checked={false} disabled />
                 </div>
