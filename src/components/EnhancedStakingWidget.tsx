@@ -14,42 +14,49 @@ import {
   Zap,
   Clock,
   DollarSign,
-  Target
+  Target,
+  Loader2
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useStaking } from "@/hooks/useStaking";
+import { useWallet } from "@/hooks/useWallet";
 
 interface StakingStats {
-  totalStaked: number;
   stakingRewards: number;
-  marketAccess: boolean;
   boostMultiplier: number;
   lockPeriod: number;
 }
 
 interface EnhancedStakingWidgetProps {
-  currentStake?: number;
-  isStaked?: boolean;
   onStakeChange?: (amount: number, isStaked: boolean) => void;
 }
 
-const EnhancedStakingWidget = ({ 
-  currentStake = 0, 
-  isStaked = false, 
-  onStakeChange 
-}: EnhancedStakingWidgetProps) => {
-  const { toast } = useToast();
+const EnhancedStakingWidget = ({ onStakeChange }: EnhancedStakingWidgetProps) => {
+  const { isConnected, isOnCorrectNetwork } = useWallet();
+  const { 
+    currentStake, 
+    isStaked, 
+    totalVaultStaked, 
+    isLoading, 
+    stake, 
+    unstake,
+    refreshStatus 
+  } = useStaking();
+
   const [stakeAmount, setStakeAmount] = useState("1");
-  const [isStaking, setIsStaking] = useState(false);
-  const [stakingProgress, setStakingProgress] = useState(0);
+  const [isTransacting, setIsTransacting] = useState(false);
+  const [transactionProgress, setTransactionProgress] = useState(0);
   const [animatedStake, setAnimatedStake] = useState(currentStake);
 
   const stakingStats: StakingStats = {
-    totalStaked: 15420,
     stakingRewards: 12.5,
-    marketAccess: isStaked,
     boostMultiplier: isStaked ? 1.25 : 1.0,
     lockPeriod: 30
   };
+
+  // Notify parent component of staking changes
+  useEffect(() => {
+    onStakeChange?.(currentStake, isStaked);
+  }, [currentStake, isStaked, onStakeChange]);
 
   // Animate stake amount changes
   useEffect(() => {
@@ -76,59 +83,54 @@ const EnhancedStakingWidget = ({
   }, [currentStake, animatedStake]);
 
   const handleStake = async () => {
-    setIsStaking(true);
-    setStakingProgress(0);
+    setIsTransacting(true);
+    setTransactionProgress(0);
     
     // Animate progress
     const progressTimer = setInterval(() => {
-      setStakingProgress(prev => {
-        if (prev >= 100) {
+      setTransactionProgress(prev => {
+        if (prev >= 90) {
           clearInterval(progressTimer);
-          return 100;
+          return 90;
         }
-        return prev + 5;
+        return prev + 10;
       });
-    }, 100);
+    }, 200);
 
+    const success = await stake(Number(stakeAmount));
+    
+    clearInterval(progressTimer);
+    setTransactionProgress(100);
+    
     setTimeout(() => {
-      const amount = Number(stakeAmount);
-      onStakeChange?.(currentStake + amount, true);
-      
-      toast({
-        title: "Staking Successful! 🎉",
-        description: `You have staked ${amount} tCORE. Market creation is now enabled!`
-      });
-      
-      setIsStaking(false);
-      setStakingProgress(0);
-    }, 2000);
+      setIsTransacting(false);
+      setTransactionProgress(0);
+    }, 1000);
   };
 
   const handleUnstake = async () => {
-    setIsStaking(true);
-    setStakingProgress(0);
+    setIsTransacting(true);
+    setTransactionProgress(0);
     
     const progressTimer = setInterval(() => {
-      setStakingProgress(prev => {
-        if (prev >= 100) {
+      setTransactionProgress(prev => {
+        if (prev >= 90) {
           clearInterval(progressTimer);
-          return 100;
+          return 90;
         }
-        return prev + 4;
+        return prev + 8;
       });
-    }, 120);
+    }, 250);
 
+    const success = await unstake(currentStake);
+    
+    clearInterval(progressTimer);
+    setTransactionProgress(100);
+    
     setTimeout(() => {
-      onStakeChange?.(0, false);
-      
-      toast({
-        title: "Unstaking Successful! ✅",
-        description: `${currentStake} tCORE has been returned to your wallet.`
-      });
-      
-      setIsStaking(false);
-      setStakingProgress(0);
-    }, 2500);
+      setIsTransacting(false);
+      setTransactionProgress(0);
+    }, 1000);
   };
 
   const getStakeTier = (amount: number) => {
@@ -140,6 +142,37 @@ const EnhancedStakingWidget = ({
   };
 
   const currentTier = getStakeTier(currentStake);
+
+  if (!isConnected || !isOnCorrectNetwork) {
+    return (
+      <Card className="border-yellow-200 bg-yellow-50">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Coins className="h-5 w-5 text-yellow-600" />
+            <span>tCORE Staking</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-yellow-700">
+            Please connect your wallet to Core Testnet to stake tCORE.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Checking staking status...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden animate-fade-in">
@@ -196,7 +229,7 @@ const EnhancedStakingWidget = ({
               <Target className="h-4 w-4" />
               <span className="text-sm font-medium">Total Staked</span>
             </div>
-            <div className="text-lg font-bold">{stakingStats.totalStaked.toLocaleString()}</div>
+            <div className="text-lg font-bold">{Math.round(totalVaultStaked).toLocaleString()}</div>
           </div>
         </div>
 
@@ -248,20 +281,29 @@ const EnhancedStakingWidget = ({
                 onChange={(e) => setStakeAmount(e.target.value)}
                 placeholder="1.0"
                 className="transition-all duration-200 focus:scale-105"
+                disabled={isTransacting}
               />
               <div className="flex justify-between text-xs text-slate-600 mt-1">
                 <span>Minimum: 1 tCORE</span>
-                <span>Wallet: 100 tCORE</span>
               </div>
             </div>
             
             <Button 
               className="w-full transition-all duration-300 hover:scale-105 active:scale-95" 
               onClick={handleStake}
-              disabled={isStaking || Number(stakeAmount) < 1}
+              disabled={isTransacting || Number(stakeAmount) < 1}
             >
-              <Lock className="h-4 w-4 mr-2" />
-              {isStaking ? "Staking..." : `Stake ${stakeAmount} tCORE`}
+              {isTransacting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Staking...
+                </>
+              ) : (
+                <>
+                  <Lock className="h-4 w-4 mr-2" />
+                  Stake {stakeAmount} tCORE
+                </>
+              )}
             </Button>
           </div>
         ) : (
@@ -279,10 +321,19 @@ const EnhancedStakingWidget = ({
               variant="outline" 
               className="w-full transition-all duration-300 hover:scale-105 active:scale-95" 
               onClick={handleUnstake}
-              disabled={isStaking}
+              disabled={isTransacting}
             >
-              <Unlock className="h-4 w-4 mr-2" />
-              {isStaking ? "Unstaking..." : "Unstake tCORE"}
+              {isTransacting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Unstaking...
+                </>
+              ) : (
+                <>
+                  <Unlock className="h-4 w-4 mr-2" />
+                  Unstake tCORE
+                </>
+              )}
             </Button>
             
             <p className="text-xs text-slate-600 text-center">
@@ -292,17 +343,33 @@ const EnhancedStakingWidget = ({
         )}
 
         {/* Progress Animation */}
-        {isStaking && (
+        {isTransacting && (
           <div className="space-y-3 animate-fade-in">
             <div className="text-sm text-center text-slate-600">
               {isStaked ? "Processing unstaking..." : "Processing staking..."}
             </div>
-            <Progress value={stakingProgress} className="h-3" />
+            <Progress value={transactionProgress} className="h-3" />
             <div className="flex justify-center">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
             </div>
           </div>
         )}
+
+        {/* Refresh Button */}
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={refreshStatus}
+          disabled={isLoading || isTransacting}
+          className="w-full"
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Shield className="h-4 w-4 mr-2" />
+          )}
+          Refresh Status
+        </Button>
       </CardContent>
     </Card>
   );
