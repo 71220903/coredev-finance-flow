@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Sidebar,
   SidebarContent,
@@ -14,8 +13,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
   Home,
@@ -75,13 +72,14 @@ const NavigationSidebar = () => {
 
   return (
     <Sidebar className="border-r border-slate-200">
+      {/* Sidebar Header with Logo - Desktop Only */}
       <SidebarHeader className="p-4">
-        <div className="flex items-center space-x-2">
+        <Link to="/" className="flex items-center space-x-2">
           <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">CD</span>
           </div>
           <span className="font-bold text-slate-900">CoreDev Zero</span>
-        </div>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
@@ -104,7 +102,7 @@ const NavigationSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* User Section */}
+        {/* User Section - Only when connected */}
         {isConnected && (
           <SidebarGroup>
             <SidebarGroupLabel>Account</SidebarGroupLabel>
@@ -153,7 +151,7 @@ const NavigationSidebar = () => {
           </SidebarGroup>
         )}
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Only when connected */}
         {isConnected && (
           <SidebarGroup>
             <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
@@ -176,6 +174,7 @@ const NavigationSidebar = () => {
         )}
       </SidebarContent>
 
+      {/* Sidebar Footer */}
       <SidebarFooter className="p-4">
         <div className="space-y-2">
           <Button variant="ghost" className="w-full justify-start">

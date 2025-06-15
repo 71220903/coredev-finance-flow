@@ -31,7 +31,7 @@ const AppLayoutContent = ({
 
   return (
     <div className="min-h-screen flex w-full bg-slate-50">
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - Only visible on lg+ screens */}
       {showSidebar && (
         <div className="hidden lg:block">
           <NavigationSidebar />
@@ -40,14 +40,18 @@ const AppLayoutContent = ({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Navigation Header */}
+        {/* Navigation Header - Responsive design */}
         <NavigationHeader 
           onMenuToggle={toggleSidebar}
           showMenuButton={showSidebar}
         />
 
-        {/* Breadcrumb */}
-        <NavigationBreadcrumb items={breadcrumbItems} />
+        {/* Breadcrumb - Only show on desktop when sidebar is present */}
+        {breadcrumbItems && (
+          <div className="hidden lg:block">
+            <NavigationBreadcrumb items={breadcrumbItems} />
+          </div>
+        )}
 
         {/* Page Header */}
         {(pageTitle || pageDescription) && (
@@ -65,14 +69,16 @@ const AppLayoutContent = ({
           </div>
         )}
 
-        {/* Main Content Area */}
+        {/* Main Content Area - Different bottom padding for mobile/desktop */}
         <main className="flex-1 pb-20 lg:pb-8">
           {children}
         </main>
       </div>
 
-      {/* Mobile Navigation */}
-      <EnhancedMobileNavigation />
+      {/* Mobile Navigation - Only visible on mobile screens */}
+      <div className="lg:hidden">
+        <EnhancedMobileNavigation />
+      </div>
     </div>
   );
 };

@@ -21,7 +21,7 @@ import {
   Shield,
   BarChart3
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { WalletConnect } from "@/components/WalletConnect";
 import { useWallet } from "@/hooks/useWallet";
 import { useUserRole } from "@/contexts/UserRoleContext";
@@ -32,28 +32,15 @@ interface NavigationHeaderProps {
 }
 
 const NavigationHeader = ({ onMenuToggle, showMenuButton = false }: NavigationHeaderProps) => {
-  const location = useLocation();
   const { isConnected } = useWallet();
   const { isAdmin } = useUserRole();
-
-  const navigationItems = [
-    { label: "Home", href: "/" },
-    { label: "Marketplace", href: "/marketplace" },
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Analytics", href: "/analytics" },
-    ...(isAdmin ? [{ label: "Admin", href: "/admin" }] : []),
-  ];
-
-  const isActiveRoute = (href: string) => {
-    return location.pathname === href;
-  };
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Left side - Logo and Menu */}
-          <div className="flex items-center space-x-4">
+          {/* Left side - Mobile Logo and Menu Button */}
+          <div className="flex items-center space-x-4 lg:hidden">
             {showMenuButton && (
               <Button
                 variant="ghost"
@@ -69,35 +56,16 @@ const NavigationHeader = ({ onMenuToggle, showMenuButton = false }: NavigationHe
               <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">CD</span>
               </div>
-              <span className="text-xl font-bold text-slate-900 hidden sm:block">
+              <span className="text-xl font-bold text-slate-900 sm:block">
                 CoreDev Zero
               </span>
             </Link>
           </div>
 
-          {/* Center - Navigation (Desktop) */}
-          <nav className="hidden lg:flex items-center space-x-1">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActiveRoute(item.href)
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                }`}
-              >
-                {item.label}
-                {item.label === "Admin" && (
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    Admin
-                  </Badge>
-                )}
-              </Link>
-            ))}
-          </nav>
+          {/* Desktop - Empty left space (sidebar handles logo/nav) */}
+          <div className="hidden lg:block"></div>
 
-          {/* Right side - Actions and User */}
+          {/* Right side - User Actions */}
           <div className="flex items-center space-x-3">
             {/* Search Button */}
             <Button variant="ghost" size="icon" className="hidden md:flex">
