@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -144,21 +143,21 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-6 lg:px-8 py-12 z-10">
-          <div className="grid lg:grid-cols-12 gap-20 items-center">
+          <div className="grid lg:grid-cols-12 gap-24 items-center">
             {/* Left Column - Content */}
-            <div className="lg:col-span-6 space-y-8">
+            <div className="lg:col-span-5 space-y-6">
               {/* Innovation Badge */}
-              <div className="inline-flex items-center bg-gradient-to-r from-blue-900/50 to-purple-900/50 border border-blue-500/30 px-5 py-2.5 rounded-full backdrop-blur-sm">
-                <div className="w-2.5 h-2.5 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full mr-2.5 animate-pulse"></div>
-                <span className="text-sm font-semibold bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">
+              <div className="inline-flex items-center bg-gradient-to-r from-blue-900/50 to-purple-900/50 border border-blue-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+                <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full mr-2 animate-pulse"></div>
+                <span className="text-xs font-semibold bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">
                   Next-Generation DeFi Protocol
                 </span>
-                <Zap className="h-3.5 w-3.5 ml-2 text-yellow-400 animate-pulse" />
+                <Zap className="h-3 w-3 ml-2 text-yellow-400 animate-pulse" />
               </div>
               
               {/* Main Heading */}
-              <div className="space-y-6">
-                <h1 className="text-4xl lg:text-5xl font-black leading-tight">
+              <div className="space-y-4">
+                <h1 className="text-3xl lg:text-4xl font-black leading-tight">
                   <span className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent">
                     Decentralized
                   </span>
@@ -170,60 +169,60 @@ const Index = () => {
                 
                 {/* Core Slogan */}
                 <div className="relative">
-                  <div className="absolute -left-5 top-0 w-1.5 h-full bg-gradient-to-b from-blue-500 via-purple-500 to-cyan-500 rounded-full animate-pulse"></div>
-                  <p className="text-2xl font-bold text-gray-200 pl-6">
+                  <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-blue-500 via-purple-500 to-cyan-500 rounded-full animate-pulse"></div>
+                  <p className="text-lg font-bold text-gray-200 pl-5">
                     <span className="text-blue-400">For developer</span> • <span className="text-purple-400">by developer</span>
                   </p>
                 </div>
               </div>
               
               {/* Description */}
-              <p className="text-lg text-gray-300 leading-relaxed max-w-xl">
+              <p className="text-base text-gray-300 leading-relaxed max-w-lg">
                 Revolutionary peer-to-peer lending ecosystem leveraging smart contracts, AI-powered risk assessment, 
                 and decentralized governance. Experience the future of developer financing today.
               </p>
 
               {/* Tech Stack Icons */}
-              <div className="flex items-center space-x-5 py-4">
-                <div className="flex items-center space-x-2 text-blue-400">
-                  <Database className="h-5 w-5" />
+              <div className="flex items-center space-x-4 py-3">
+                <div className="flex items-center space-x-1.5 text-blue-400">
+                  <Database className="h-4 w-4" />
                   <span className="text-xs font-medium">Smart Contracts</span>
                 </div>
-                <div className="flex items-center space-x-2 text-purple-400">
-                  <Network className="h-5 w-5" />
+                <div className="flex items-center space-x-1.5 text-purple-400">
+                  <Network className="h-4 w-4" />
                   <span className="text-xs font-medium">Layer 2</span>
                 </div>
-                <div className="flex items-center space-x-2 text-cyan-400">
-                  <Cpu className="h-5 w-5" />
+                <div className="flex items-center space-x-1.5 text-cyan-400">
+                  <Cpu className="h-4 w-4" />
                   <span className="text-xs font-medium">AI Engine</span>
                 </div>
-                <div className="flex items-center space-x-2 text-green-400">
-                  <Bitcoin className="h-5 w-5" />
+                <div className="flex items-center space-x-1.5 text-green-400">
+                  <Bitcoin className="h-4 w-4" />
                   <span className="text-xs font-medium">Multi-Chain</span>
                 </div>
               </div>
               
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-5 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-3">
                 {!isConnected ? (
-                  <div className="flex items-center space-x-3 bg-gradient-to-r from-gray-900/80 to-blue-900/80 border border-blue-500/30 rounded-xl px-6 py-4 backdrop-blur-sm">
-                    <Wallet className="h-5 w-5 text-blue-400 animate-pulse" />
-                    <span className="text-gray-200 font-semibold text-base">Connect Web3 Wallet to Enter the Future</span>
+                  <div className="flex items-center space-x-2.5 bg-gradient-to-r from-gray-900/80 to-blue-900/80 border border-blue-500/30 rounded-xl px-5 py-3 backdrop-blur-sm">
+                    <Wallet className="h-4 w-4 text-blue-400 animate-pulse" />
+                    <span className="text-gray-200 font-semibold text-sm">Connect Web3 Wallet to Enter the Future</span>
                   </div>
                 ) : (
                   <>
                     <Button 
                       size="lg" 
                       onClick={handleGetStarted} 
-                      className="group bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 hover:from-blue-500 hover:via-purple-500 hover:to-cyan-500 text-white px-8 py-5 text-lg font-bold shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 transform hover:scale-105 border border-blue-400/20"
+                      className="group bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 hover:from-blue-500 hover:via-purple-500 hover:to-cyan-500 text-white px-6 py-4 text-base font-bold shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 transform hover:scale-105 border border-blue-400/20"
                     >
-                      <Play className="mr-2.5 h-5 w-5 group-hover:scale-110 transition-transform" />
+                      <Play className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
                       {isAdmin ? 'Access Neural Control Panel' : 'Launch DeFi Dashboard'}
-                      <ArrowRight className="ml-2.5 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
-                    <Button size="lg" variant="outline" asChild className="px-8 py-5 text-lg font-bold border-2 border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 transition-all duration-300">
+                    <Button size="lg" variant="outline" asChild className="px-6 py-4 text-base font-bold border-2 border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 transition-all duration-300">
                       <Link to="/marketplace">
-                        <Globe className="mr-2.5 h-5 w-5" />
+                        <Globe className="mr-2 h-4 w-4" />
                         Explore DeFi Markets
                       </Link>
                     </Button>
@@ -232,27 +231,27 @@ const Index = () => {
               </div>
 
               {/* Trust Indicators */}
-              <div className="flex items-center space-x-6 pt-6">
-                <div className="flex items-center space-x-2.5">
-                  <Shield className="h-5 w-5 text-green-400 animate-pulse" />
-                  <span className="text-sm font-semibold text-gray-300">Zero-Knowledge Proofs</span>
+              <div className="flex items-center space-x-5 pt-4">
+                <div className="flex items-center space-x-2">
+                  <Shield className="h-4 w-4 text-green-400 animate-pulse" />
+                  <span className="text-xs font-semibold text-gray-300">Zero-Knowledge Proofs</span>
                 </div>
-                <div className="flex items-center space-x-2.5">
-                  <Network className="h-5 w-5 text-blue-400 animate-pulse" />
-                  <span className="text-sm font-semibold text-gray-300">Cross-Chain Compatible</span>
+                <div className="flex items-center space-x-2">
+                  <Network className="h-4 w-4 text-blue-400 animate-pulse" />
+                  <span className="text-xs font-semibold text-gray-300">Cross-Chain Compatible</span>
                 </div>
-                <div className="flex items-center space-x-2.5">
-                  <Zap className="h-5 w-5 text-yellow-400 animate-pulse" />
-                  <span className="text-sm font-semibold text-gray-300">Lightning Fast</span>
+                <div className="flex items-center space-x-2">
+                  <Zap className="h-4 w-4 text-yellow-400 animate-pulse" />
+                  <span className="text-xs font-semibold text-gray-300">Lightning Fast</span>
                 </div>
               </div>
             </div>
 
             {/* Right Column - Futuristic Gallery */}
-            <div className="lg:col-span-6 lg:pl-8">
+            <div className="lg:col-span-7 lg:pl-12">
               <div className="relative">
                 {/* Main Gallery Container with Holographic Effect */}
-                <div className="relative h-[600px] bg-gradient-to-br from-gray-900/50 to-blue-900/50 rounded-3xl shadow-2xl shadow-blue-500/20 overflow-hidden border border-blue-500/30 backdrop-blur-xl">
+                <div className="relative h-[480px] bg-gradient-to-br from-gray-900/50 to-blue-900/50 rounded-3xl shadow-2xl shadow-blue-500/20 overflow-hidden border border-blue-500/30 backdrop-blur-xl">
                   {/* Holographic Border Effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-cyan-500/20 rounded-3xl animate-pulse"></div>
                   
@@ -270,28 +269,28 @@ const Index = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
                         
                         {/* Futuristic Content Overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                          <div className="space-y-3">
-                            <div className="flex items-center space-x-3">
-                              <Badge className="bg-gradient-to-r from-blue-500/80 to-purple-500/80 text-white border-none px-3 py-1.5">
+                        <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                          <div className="space-y-2.5">
+                            <div className="flex items-center space-x-2.5">
+                              <Badge className="bg-gradient-to-r from-blue-500/80 to-purple-500/80 text-white border-none px-2.5 py-1 text-xs">
                                 {item.category}
                               </Badge>
-                              <Badge variant="outline" className="border-cyan-400/50 text-cyan-400">
+                              <Badge variant="outline" className="border-cyan-400/50 text-cyan-400 text-xs">
                                 {item.tech}
                               </Badge>
                             </div>
-                            <h3 className="text-3xl font-black mb-3 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+                            <h3 className="text-2xl font-black mb-2.5 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
                               {item.title}
                             </h3>
-                            <p className="text-gray-200 text-base leading-relaxed">
+                            <p className="text-gray-200 text-sm leading-relaxed">
                               {item.description}
                             </p>
                           </div>
                         </div>
 
                         {/* Tech Pattern Overlay */}
-                        <div className="absolute top-4 right-4 w-16 h-16 border border-blue-400/30 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                          <Code2 className="h-6 w-6 text-blue-400 animate-pulse" />
+                        <div className="absolute top-3 right-3 w-12 h-12 border border-blue-400/30 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                          <Code2 className="h-5 w-5 text-blue-400 animate-pulse" />
                         </div>
                       </div>
                     ))}
@@ -300,25 +299,25 @@ const Index = () => {
                   {/* Navigation Arrows */}
                   <button
                     onClick={prevSlide}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-blue-500/20 backdrop-blur-sm hover:bg-blue-500/40 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 border border-blue-400/30"
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 bg-blue-500/20 backdrop-blur-sm hover:bg-blue-500/40 text-white p-2.5 rounded-full transition-all duration-300 hover:scale-110 border border-blue-400/30"
                   >
-                    <ChevronLeft className="h-6 w-6" />
+                    <ChevronLeft className="h-5 w-5" />
                   </button>
                   <button
                     onClick={nextSlide}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-500/20 backdrop-blur-sm hover:bg-blue-500/40 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 border border-blue-400/30"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-blue-500/20 backdrop-blur-sm hover:bg-blue-500/40 text-white p-2.5 rounded-full transition-all duration-300 hover:scale-110 border border-blue-400/30"
                   >
-                    <ChevronRight className="h-6 w-6" />
+                    <ChevronRight className="h-5 w-5" />
                   </button>
 
                   {/* Gallery Indicators */}
-                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3">
+                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 flex space-x-2.5">
                     {blockchainShowcase.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentSlide(index)}
-                        className={`w-3 h-3 rounded-full transition-all duration-300 border border-blue-400/50 ${
-                          index === currentSlide ? 'bg-blue-400 w-10' : 'bg-blue-400/30'
+                        className={`w-2.5 h-2.5 rounded-full transition-all duration-300 border border-blue-400/50 ${
+                          index === currentSlide ? 'bg-blue-400 w-8' : 'bg-blue-400/30'
                         }`}
                       />
                     ))}
@@ -326,21 +325,21 @@ const Index = () => {
                 </div>
 
                 {/* Floating Tech Badges */}
-                <div className="absolute -bottom-10 -left-10 bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white p-6 rounded-3xl shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500 border border-green-400/30 backdrop-blur-sm">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="h-8 w-8" />
+                <div className="absolute -bottom-8 -left-8 bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white p-4 rounded-2xl shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500 border border-green-400/30 backdrop-blur-sm">
+                  <div className="flex items-center space-x-2.5">
+                    <CheckCircle className="h-6 w-6" />
                     <div>
-                      <div className="font-black text-lg">Audited</div>
+                      <div className="font-black text-base">Audited</div>
                       <div className="text-xs opacity-90">Smart Contracts</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="absolute -top-10 -right-10 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white p-6 rounded-3xl shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-500 border border-purple-400/30 backdrop-blur-sm">
-                  <div className="flex items-center space-x-3">
-                    <Network className="h-8 w-8" />
+                <div className="absolute -top-8 -right-8 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white p-4 rounded-2xl shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-500 border border-purple-400/30 backdrop-blur-sm">
+                  <div className="flex items-center space-x-2.5">
+                    <Network className="h-6 w-6" />
                     <div>
-                      <div className="font-black text-lg">$50M+</div>
+                      <div className="font-black text-base">$50M+</div>
                       <div className="text-xs opacity-90">TVL Secured</div>
                     </div>
                   </div>
