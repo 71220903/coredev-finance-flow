@@ -39,7 +39,7 @@ export const useStaking = () => {
     setStakingState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      // Get user's stake amount
+      // Get user's stake amount using stakesOf
       const userStake = await stakingVault.stakesOf(address);
       const stakeAmount = Number(ethers.formatEther(userStake));
       
@@ -73,7 +73,7 @@ export const useStaking = () => {
     }
   };
 
-  // Stake tCORE
+  // Stake tCORE using payable stake() function
   const stake = async (amount: number) => {
     if (!address || !isOnCorrectNetwork || !stakingVault) {
       toast({
@@ -88,6 +88,7 @@ export const useStaking = () => {
       console.log('Staking amount:', amount);
       
       const stakeValue = ethers.parseEther(amount.toString());
+      // Call stake() with value (payable function)
       const tx = await stakingVault.stake({ value: stakeValue });
       
       toast({

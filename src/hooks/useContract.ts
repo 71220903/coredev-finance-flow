@@ -8,7 +8,8 @@ import {
   STAKING_VAULT_ABI, 
   MARKET_ABI, 
   SUSDT_ABI, 
-  REPUTATION_SBT_ABI 
+  REPUTATION_SBT_ABI,
+  DEVELOPER_PROFILE_ABI
 } from '@/config/contracts';
 
 export const useContract = () => {
@@ -49,6 +50,12 @@ export const useContract = () => {
     return new ethers.Contract(marketAddress, MARKET_ABI, signer);
   };
 
+  const getDeveloperProfileContract = (profileAddress: string) => {
+    if (!signer || !isConnected) return null;
+    
+    return new ethers.Contract(profileAddress, DEVELOPER_PROFILE_ABI, signer);
+  };
+
   const getReadOnlyContract = (contractName: keyof typeof CONTRACTS, abi: any[]) => {
     if (!provider) return null;
 
@@ -63,6 +70,7 @@ export const useContract = () => {
     ...contracts,
     provider,
     getMarketContract,
+    getDeveloperProfileContract,
     getReadOnlyContract,
     isReady: isConnected && !!provider && !!signer
   };
