@@ -6,51 +6,45 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Coins, Lock, Unlock, TrendingUp, Shield } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useNativeStaking } from "@/hooks/useNativeStaking";
 
 interface StakingWidgetProps {
-  currentStake?: number;
-  isStaked?: boolean;
   onStakeChange?: (amount: number, isStaked: boolean) => void;
 }
 
-const StakingWidget = ({ currentStake = 0, isStaked = false, onStakeChange }: StakingWidgetProps) => {
-  const { toast } = useToast();
+const StakingWidget = ({ onStakeChange }: StakingWidgetProps) => {
+  const {
+    stakedAmount,
+    nativeBalance,
+    isStaking,
+    isUnstaking,
+    stake,
+    unstake
+  } = useNativeStaking();
+  
   const [stakeAmount, setStakeAmount] = useState("1");
-  const [isStaking, setIsStaking] = useState(false);
+  const [unstakeAmount, setUnstakeAmount] = useState("");
 
   const handleStake = async () => {
-    setIsStaking(true);
-    
-    // Simulate staking transaction
-    setTimeout(() => {
-      const amount = Number(stakeAmount);
-      onStakeChange?.(currentStake + amount, true);
-      
-      toast({
-        title: "Staking Successful!",
-        description: `You have staked ${amount} tCORE. You can now create loan markets.`
-      });
-      
-      setIsStaking(false);
-    }, 2000);
+    const success = await stake(stakeAmount);
+    if (success) {
+      onStakeChange?.(stakedAmount + Number(stakeAmount), true);
+      setStakeAmount("1");
+    }
   };
 
   const handleUnstake = async () => {
-    setIsStaking(true);
-    
-    // Simulate unstaking transaction
-    setTimeout(() => {
-      onStakeChange?.(0, false);
-      
-      toast({
-        title: "Unstaking Successful!",
-        description: `${currentStake} tCORE has been returned to your wallet.`
-      });
-      
-      setIsStaking(false);
-    }, 2000);
+    const amount = unstakeAmount || stakedAmount.toString();
+    const success = await unstake(amount);
+    if (success) {
+      onStakeChange?.(stakedAmount - Number(amount), Number(amount) < stakedAmount);
+      setUnstakeAmount("");
+    }
   };
+
+  const isStaked = stakedAmount > 0;
+  const canStake = Number(stakeAmount) > 0 && Number(stakeAmount) <= Number(nativeBalance);
+  const canUnstake = Number(unstakeAmount || stakedAmount) > 0 && Number(unstakeAmount || stakedAmount) <= stakedAmount;
 
   return (
     <Card>
@@ -70,9 +64,12 @@ const StakingWidget = ({ currentStake = 0, isStaked = false, onStakeChange }: St
         {/* Current Stake Display */}
         <div className="text-center p-4 bg-slate-50 rounded-lg">
           <div className="text-2xl font-bold text-blue-600">
-            {currentStake} tCORE
+            {stakedAmount.toFixed(4)} tCORE
           </div>
           <div className="text-sm text-slate-600">Currently Staked</div>
+          <div className="text-xs text-slate-500 mt-1">
+            Available Balance: {Number(nativeBalance).toFixed(4)} tCORE
+          </div>
         </div>
 
         {/* Staking Benefits */}
@@ -92,16 +89,17 @@ const StakingWidget = ({ currentStake = 0, isStaked = false, onStakeChange }: St
         </div>
 
         {/* Staking Actions */}
-        {!isStaked ? (
+        {!isStaked || stakedAmount < 1 ? (
           <div className="space-y-3">
             <div>
               <label className="text-sm font-medium">Stake Amount (tCORE)</label>
               <Input
                 type="number"
                 min="1"
+                step="0.0001"
                 value={stakeAmount}
                 onChange={(e) => setStakeAmount(e.target.value)}
-                placeholder="1"
+                placeholder="1.0000"
               />
               <p className="text-xs text-slate-600 mt-1">
                 Minimum 1 tCORE required to create markets
@@ -111,7 +109,7 @@ const StakingWidget = ({ currentStake = 0, isStaked = false, onStakeChange }: St
             <Button 
               className="w-full" 
               onClick={handleStake}
-              disabled={isStaking || Number(stakeAmount) < 1}
+              disabled={isStaking || !canStake}
             >
               <Lock className="h-4 w-4 mr-2" />
               {isStaking ? "Staking..." : `Stake ${stakeAmount} tCORE`}
@@ -122,15 +120,28 @@ const StakingWidget = ({ currentStake = 0, isStaked = false, onStakeChange }: St
             <div className="text-center text-green-600 font-medium">
               ✅ You are eligible to create loan markets
             </div>
+
+            <div>
+              <label className="text-sm font-medium">Unstake Amount (tCORE)</label>
+              <Input
+                type="number"
+                min="0"
+                max={stakedAmount}
+                step="0.0001"
+                value={unstakeAmount}
+                onChange={(e) => setUnstakeAmount(e.target.value)}
+                placeholder={`Max: ${stakedAmount.toFixed(4)}`}
+              />
+            </div>
             
             <Button 
               variant="outline" 
               className="w-full" 
               onClick={handleUnstake}
-              disabled={isStaking}
+              disabled={isUnstaking || !canUnstake}
             >
               <Unlock className="h-4 w-4 mr-2" />
-              {isStaking ? "Unstaking..." : "Unstake tCORE"}
+              {isUnstaking ? "Unstaking..." : `Unstake ${unstakeAmount || stakedAmount.toFixed(4)} tCORE`}
             </Button>
             
             <p className="text-xs text-slate-600 text-center">
@@ -139,10 +150,12 @@ const StakingWidget = ({ currentStake = 0, isStaked = false, onStakeChange }: St
           </div>
         )}
 
-        {/* Staking Progress (if staking) */}
-        {isStaking && (
+        {/* Staking Progress (if staking/unstaking) */}
+        {(isStaking || isUnstaking) && (
           <div className="space-y-2">
-            <div className="text-sm text-center">Processing transaction...</div>
+            <div className="text-sm text-center">
+              Processing transaction...
+            </div>
             <Progress value={66} className="h-2" />
           </div>
         )}

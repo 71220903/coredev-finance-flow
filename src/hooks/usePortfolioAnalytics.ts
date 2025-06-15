@@ -1,9 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { useContract } from './useContract';
 import { useWallet } from './useWallet';
 import { useMarketData } from './useMarketData';
+import { useLoanPositionNFT } from './useLoanPositionNFT';
 
 interface LendingPosition {
   marketAddress: string;
@@ -56,6 +56,7 @@ export const usePortfolioAnalytics = () => {
   const { address, isConnected, provider } = useWallet();
   const { getMarketContract } = useContract();
   const { markets } = useMarketData();
+  const { positions: nftPositions, fetchUserPositions } = useLoanPositionNFT();
   
   const [lendingPositions, setLendingPositions] = useState<LendingPosition[]>([]);
   const [borrowingPositions, setBorrowingPositions] = useState<BorrowingPosition[]>([]);
@@ -74,64 +75,61 @@ export const usePortfolioAnalytics = () => {
   const [transactionHistory, setTransactionHistory] = useState<TransactionHistory[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch user's lending positions
+  // Enhanced lending positions fetch using NFT positions
   const fetchLendingPositions = useCallback(async () => {
     if (!address || !provider || markets.length === 0) return [];
 
     const positions: LendingPosition[] = [];
 
     try {
-      for (const market of markets) {
-        const marketContract = getMarketContract(market.contractAddress);
+      // Use NFT positions as the source of truth for lending positions
+      for (const nftPosition of nftPositions) {
+        const market = markets.find(m => m.contractAddress === nftPosition.marketAddress);
+        if (!market) continue;
+
+        const marketContract = getMarketContract(nftPosition.marketAddress);
         if (!marketContract) continue;
 
-        // Check if user has deposits in this market
-        const userDeposit = await marketContract.depositsOf(address);
-        const depositAmount = Number(ethers.formatUnits(userDeposit, 6));
+        const currentState = Number(await marketContract.currentState());
+        const interestRateBps = Number(await marketContract.interestRateBps());
+        const interestRate = interestRateBps / 10000;
 
-        if (depositAmount > 0) {
-          // Calculate interest earned based on market state and time
-          const currentState = Number(await marketContract.currentState());
-          const interestRateBps = Number(await marketContract.interestRateBps());
-          const interestRate = interestRateBps / 10000;
+        let interestEarned = 0;
+        let status: 'active' | 'completed' | 'defaulted' = 'active';
+        let currentValue = nftPosition.principalAmount;
 
-          let interestEarned = 0;
-          let status: 'active' | 'completed' | 'defaulted' = 'active';
-          let currentValue = depositAmount;
-
-          if (currentState === 2) { // Completed
-            status = 'completed';
-            interestEarned = depositAmount * interestRate;
-            currentValue = depositAmount + interestEarned;
-          } else if (currentState === 1) { // Active/Funded
-            status = 'active';
-            // Calculate accrued interest (simplified)
-            const timeElapsed = 30; // Mock days
-            interestEarned = depositAmount * interestRate * (timeElapsed / 365);
-            currentValue = depositAmount + interestEarned;
-          }
-
-          positions.push({
-            marketAddress: market.contractAddress,
-            depositAmount,
-            currentValue,
-            interestEarned,
-            status,
-            startDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-            maturityDate: status === 'active' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : undefined,
-            borrowerProfile: {
-              name: market.borrowerProfile?.name || 'Unknown',
-              trustScore: market.borrowerProfile?.trustScore || 50
-            }
-          });
+        if (currentState === 2) { // Completed
+          status = 'completed';
+          interestEarned = nftPosition.principalAmount * interestRate;
+          currentValue = nftPosition.principalAmount + interestEarned;
+        } else if (currentState === 1) { // Active/Funded
+          status = 'active';
+          // Calculate accrued interest (simplified)
+          const timeElapsed = 30; // Mock days
+          interestEarned = nftPosition.principalAmount * interestRate * (timeElapsed / 365);
+          currentValue = nftPosition.principalAmount + interestEarned;
         }
+
+        positions.push({
+          marketAddress: nftPosition.marketAddress,
+          depositAmount: nftPosition.principalAmount,
+          currentValue,
+          interestEarned,
+          status,
+          startDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+          maturityDate: status === 'active' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : undefined,
+          borrowerProfile: {
+            name: market.borrowerProfile?.name || 'Unknown',
+            trustScore: market.borrowerProfile?.trustScore || 50
+          }
+        });
       }
     } catch (error) {
       console.error('Error fetching lending positions:', error);
     }
 
     return positions;
-  }, [address, provider, markets, getMarketContract]);
+  }, [address, provider, markets, nftPositions, getMarketContract]);
 
   // Fetch user's borrowing positions
   const fetchBorrowingPositions = useCallback(async () => {
@@ -266,6 +264,9 @@ export const usePortfolioAnalytics = () => {
 
     setLoading(true);
     try {
+      // Fetch NFT positions first
+      await fetchUserPositions();
+      
       const [lendingPos, borrowingPos, txHistory] = await Promise.all([
         fetchLendingPositions(),
         fetchBorrowingPositions(),
@@ -282,7 +283,7 @@ export const usePortfolioAnalytics = () => {
     } finally {
       setLoading(false);
     }
-  }, [address, isConnected, fetchLendingPositions, fetchBorrowingPositions, fetchTransactionHistory, calculateMetrics]);
+  }, [address, isConnected, fetchUserPositions, fetchLendingPositions, fetchBorrowingPositions, fetchTransactionHistory, calculateMetrics]);
 
   // Effects
   useEffect(() => {
@@ -296,6 +297,7 @@ export const usePortfolioAnalytics = () => {
     borrowingPositions,
     portfolioMetrics,
     transactionHistory,
+    nftPositions,
     loading,
     refreshPortfolio: fetchPortfolioData
   };

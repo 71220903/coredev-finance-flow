@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import TrustScoreWidget from "./TrustScoreWidget";
-import { useTokenDeposit } from "@/hooks/useTokenDeposit";
+import { useEnhancedTokenDeposit } from "@/hooks/useEnhancedTokenDeposit";
 import { 
   Clock, 
   DollarSign, 
@@ -69,7 +69,7 @@ const LoanMarketCard = ({ market, userRole = 'lender' }: LoanMarketCardProps) =>
     executeDeposit,
     hasSufficientAllowance,
     hasSufficientBalance
-  } = useTokenDeposit(market.id);
+  } = useEnhancedTokenDeposit(market.id);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -192,7 +192,7 @@ const LoanMarketCard = ({ market, userRole = 'lender' }: LoanMarketCardProps) =>
           </div>
         )}
 
-        {/* Deposit Form */}
+        {/* Enhanced Deposit Form with NFT Integration */}
         {showDepositForm && market.loan.status === 'funding' && (
           <div className="p-4 border rounded-lg bg-blue-50 space-y-3">
             <div className="text-sm text-slate-600">
@@ -210,6 +210,9 @@ const LoanMarketCard = ({ market, userRole = 'lender' }: LoanMarketCardProps) =>
                 max={maxDepositAmount}
                 step="0.01"
               />
+              <div className="text-xs text-blue-600">
+                💡 A Loan Position NFT will be minted to represent your deposit
+              </div>
             </div>
             
             {depositAmount && !hasSufficientBalance(depositAmount) && (
@@ -234,7 +237,7 @@ const LoanMarketCard = ({ market, userRole = 'lender' }: LoanMarketCardProps) =>
                 }
                 className="flex-1"
               >
-                {isApproving ? 'Approving...' : isDepositing ? 'Depositing...' : 'Deposit'}
+                {isApproving ? 'Approving...' : isDepositing ? 'Depositing...' : 'Deposit & Mint NFT'}
               </Button>
               <Button 
                 variant="outline" 
