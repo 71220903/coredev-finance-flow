@@ -19,47 +19,82 @@ import {
   ShieldCheck,
   Lock,
   Unlock,
-  BarChart3
+  BarChart3,
+  Loader2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AchievementsWidget from "@/components/AchievementsWidget";
 import EnhancedStakingWidget from "@/components/EnhancedStakingWidget";
 import MobileNavigation from "@/components/MobileNavigation";
+import { usePortfolioAnalytics } from "@/hooks/usePortfolioAnalytics";
+import { useHybridStaking } from "@/hooks/useHybridStaking";
 
 const Dashboard = () => {
-  const [userProfile, setUserProfile] = useState({
+  const { 
+    portfolioMetrics, 
+    lendingPositions, 
+    borrowingPositions, 
+    loading: portfolioLoading 
+  } = usePortfolioAnalytics();
+  
+  const { 
+    totalStaked, 
+    totalRewards, 
+    apy, 
+    isLoading: stakingLoading 
+  } = useHybridStaking();
+
+  const [userProfile] = useState({
     name: "Alex Rodriguez",
     githubHandle: "@alexcoder",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face",
-    trustScore: 88,
-    trustBreakdown: { github: 35, codeQuality: 28, community: 20, onChain: 5 },
-    staking: {
-      amount: 5.25,
-      isActive: true
-    },
-    portfolio: {
-      totalBorrowed: 75000,
-      totalRepaid: 50000,
-      activeLoans: 2,
-      avgInterestRate: 11.5
-    },
-    recentActivity: [
-      { type: "loan-created", date: "2024-01-20", description: "Created a new loan market for $50,000" },
-      { type: "loan-funded", date: "2024-01-18", description: "Loan market successfully funded by lenders" },
-      { type: "repayment", date: "2024-01-15", description: "Received repayment of $5,000 from loan #123" }
-    ],
-    activeMarkets: [
-      { id: "1", title: "AI-Powered SaaS Platform", status: "funding", progress: 65 },
-      { id: "2", title: "DeFi Analytics Dashboard", status: "active", progress: 100 }
-    ]
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face"
   });
 
   const statsCards = [
-    { title: "Total Borrowed", value: "$75,000", icon: DollarSign, color: "text-green-600" },
-    { title: "Total Repaid", value: "$50,000", icon: Unlock, color: "text-blue-600" },
-    { title: "Active Loans", value: "2", icon: Lock, color: "text-purple-600" },
-    { title: "Avg. Interest Rate", value: "11.5%", icon: TrendingUp, color: "text-yellow-600" }
+    { 
+      title: "Total Lent", 
+      value: portfolioLoading ? "..." : `$${portfolioMetrics.totalLent.toLocaleString()}`, 
+      icon: DollarSign, 
+      color: "text-green-600",
+      change: portfolioMetrics.avgLendingReturn > 0 ? `+${portfolioMetrics.avgLendingReturn.toFixed(1)}% APY` : "No activity"
+    },
+    { 
+      title: "Total Borrowed", 
+      value: portfolioLoading ? "..." : `$${portfolioMetrics.totalBorrowed.toLocaleString()}`, 
+      icon: Lock, 
+      color: "text-purple-600",
+      change: portfolioMetrics.avgBorrowingRate > 0 ? `${portfolioMetrics.avgBorrowingRate.toFixed(1)}% avg rate` : "No loans"
+    },
+    { 
+      title: "Interest Earned", 
+      value: portfolioLoading ? "..." : `$${portfolioMetrics.totalInterestEarned.toLocaleString()}`, 
+      icon: TrendingUp, 
+      color: "text-blue-600",
+      change: `${portfolioMetrics.activeLendingPositions} active positions`
+    },
+    { 
+      title: "Trust Score", 
+      value: portfolioLoading ? "..." : portfolioMetrics.trustScore.toString(), 
+      icon: ShieldCheck, 
+      color: "text-yellow-600",
+      change: portfolioMetrics.trustScore >= 80 ? "Excellent" : portfolioMetrics.trustScore >= 60 ? "Good" : "Building"
+    }
   ];
+
+  const recentActivity = [
+    ...lendingPositions.slice(0, 2).map(pos => ({
+      type: "lending",
+      date: pos.startDate.toISOString().split('T')[0],
+      description: `Deposited $${pos.depositAmount.toLocaleString()} to market`,
+      status: pos.status
+    })),
+    ...borrowingPositions.slice(0, 2).map(pos => ({
+      type: "borrowing", 
+      date: pos.startDate.toISOString().split('T')[0],
+      description: `Borrowed $${pos.borrowedAmount.toLocaleString()} from market`,
+      status: pos.status
+    }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -100,7 +135,7 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Enhanced Stats Cards with Animations */}
+        {/* Enhanced Stats Cards with Real Data */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {statsCards.map((card, index) => (
             <Card 
@@ -113,9 +148,15 @@ const Dashboard = () => {
                 <card.icon className={`h-4 w-4 ${card.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{card.value}</div>
+                <div className="text-2xl font-bold flex items-center">
+                  {portfolioLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    card.value
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Updated every 5 minutes
+                  {card.change}
                 </p>
               </CardContent>
             </Card>
@@ -125,12 +166,35 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Enhanced Staking Widget - remove invalid props */}
-            <EnhancedStakingWidget
-              onStakeChange={(amount, isStaked) => {
-                console.log("Stake changed:", amount, isStaked);
-              }}
-            />
+            {/* Enhanced Staking Widget with Hybrid Features */}
+            <Card className="animate-fade-in">
+              <CardHeader>
+                <CardTitle>Hybrid Staking Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {stakingLoading ? <Loader2 className="h-6 w-6 animate-spin mx-auto" /> : `${totalStaked.toFixed(2)}`}
+                    </div>
+                    <div className="text-sm text-blue-600">Total Staked (tCORE)</div>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {stakingLoading ? <Loader2 className="h-6 w-6 animate-spin mx-auto" /> : `${totalRewards.toFixed(4)}`}
+                    </div>
+                    <div className="text-sm text-green-600">Total Rewards</div>
+                  </div>
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {apy.toFixed(1)}%
+                    </div>
+                    <div className="text-sm text-purple-600">Current APY</div>
+                  </div>
+                </div>
+                <EnhancedStakingWidget />
+              </CardContent>
+            </Card>
 
             {/* Quick Actions */}
             <Card className="animate-fade-in">
@@ -159,27 +223,43 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Recent Activity */}
+            {/* Recent Activity with Real Data */}
             <Card className="animate-fade-in">
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {userProfile.recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-slate-900">
-                        {activity.description}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {activity.date} • {activity.type}
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
+                {portfolioLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <span className="ml-2">Loading activity...</span>
                   </div>
-                ))}
+                ) : recentActivity.length > 0 ? (
+                  recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-slate-900">
+                          {activity.description}
+                        </div>
+                        <div className="text-xs text-slate-500 flex items-center space-x-2">
+                          <span>{activity.date}</span>
+                          <span>•</span>
+                          <Badge variant="outline" className="text-xs">
+                            {activity.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-slate-500">
+                    <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No recent activity</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -191,7 +271,7 @@ const Dashboard = () => {
               <CardContent>
                 <div className="h-48 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
                   <BarChart className="h-8 w-8" />
-                  Chart Placeholder
+                  Chart Placeholder - Real data integration ready
                 </div>
               </CardContent>
             </Card>
@@ -199,7 +279,7 @@ const Dashboard = () => {
 
           {/* Right Column */}
           <div className="space-y-8">
-            {/* Profile Overview */}
+            {/* Profile Overview with Real Trust Score */}
             <Card className="animate-fade-in">
               <CardHeader>
                 <CardTitle>Profile Overview</CardTitle>
@@ -224,9 +304,14 @@ const Dashboard = () => {
                     <div className="text-sm font-medium text-slate-900">
                       Trust Score
                     </div>
-                    <Badge variant="secondary">{userProfile.trustScore}</Badge>
+                    <Badge variant="secondary">
+                      {portfolioLoading ? "..." : portfolioMetrics.trustScore}
+                    </Badge>
                   </div>
-                  <Progress value={userProfile.trustScore} max={100} />
+                  <Progress 
+                    value={portfolioLoading ? 0 : portfolioMetrics.trustScore} 
+                    max={100} 
+                  />
                 </div>
                 <div className="flex items-center space-x-2">
                   <Github className="h-4 w-4 text-slate-500" />
@@ -242,76 +327,35 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Achievements Widget */}
+            {/* Enhanced Achievements Widget */}
             <AchievementsWidget />
 
-            {/* Active Markets */}
+            {/* Active Positions Summary */}
             <Card className="animate-fade-in">
               <CardHeader>
-                <CardTitle>Active Markets</CardTitle>
+                <CardTitle>Active Positions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {userProfile.activeMarkets.map((market) => (
-                  <div key={market.id} className="flex items-center justify-between">
-                    <div>
+                {portfolioLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
                       <div className="text-sm font-medium text-slate-900">
-                        {market.title}
+                        Lending Positions
                       </div>
-                      <div className="text-xs text-slate-500">
-                        Status: {market.status}
-                      </div>
+                      <Badge variant="outline">{portfolioMetrics.activeLendingPositions}</Badge>
                     </div>
-                    <Progress value={market.progress} className="w-24 h-2" />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Trust Score Breakdown */}
-            <Card className="animate-fade-in">
-              <CardHeader>
-                <CardTitle>Trust Score Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-slate-900">
-                    GitHub Activity
-                  </div>
-                  <span className="text-xs text-slate-500">
-                    {userProfile.trustBreakdown.github}
-                  </span>
-                </div>
-                <Progress value={userProfile.trustBreakdown.github} max={100} />
-
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-slate-900">
-                    Code Quality
-                  </div>
-                  <span className="text-xs text-slate-500">
-                    {userProfile.trustBreakdown.codeQuality}
-                  </span>
-                </div>
-                <Progress value={userProfile.trustBreakdown.codeQuality} max={100} />
-
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-slate-900">
-                    Community Engagement
-                  </div>
-                  <span className="text-xs text-slate-500">
-                    {userProfile.trustBreakdown.community}
-                  </span>
-                </div>
-                <Progress value={userProfile.trustBreakdown.community} max={100} />
-
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-slate-900">
-                    On-Chain Activity
-                  </div>
-                  <span className="text-xs text-slate-500">
-                    {userProfile.trustBreakdown.onChain}
-                  </span>
-                </div>
-                <Progress value={userProfile.trustBreakdown.onChain} max={100} />
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-slate-900">
+                        Borrowing Positions  
+                      </div>
+                      <Badge variant="outline">{portfolioMetrics.activeBorrowingPositions}</Badge>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
