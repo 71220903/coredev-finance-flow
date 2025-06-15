@@ -198,8 +198,6 @@ const Marketplace = () => {
                     Create Market
                   </Button>
                 }
-                isStaked={true}
-                stakeAmount={1}
               />
             </div>
           </div>

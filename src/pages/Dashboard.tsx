@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -124,10 +125,8 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Enhanced Staking Widget */}
+            {/* Enhanced Staking Widget - remove invalid props */}
             <EnhancedStakingWidget
-              currentStake={userProfile.staking.amount}
-              isStaked={userProfile.staking.isActive}
               onStakeChange={(amount, isStaked) => {
                 console.log("Stake changed:", amount, isStaked);
               }}
