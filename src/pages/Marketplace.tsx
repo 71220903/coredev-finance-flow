@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,17 +17,18 @@ import {
   Plus,
   RefreshCw,
   Wifi,
-  WifiOff
+  Shield,
+  Target
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { WalletConnect } from "@/components/WalletConnect";
-import { useMockMarketData } from "@/hooks/useMockMarketData";
+import { useEnhancedMarketData } from "@/hooks/useEnhancedMarketData";
 import { useWallet } from "@/hooks/useWallet";
 
 const Marketplace = () => {
   const [searchFilters, setSearchFilters] = useState<any>({});
-  const [isOnline] = useState(true); // Mock online status
-  const { markets, loading, error, marketStats, refetchMarkets, filterMarkets } = useMockMarketData();
+  const [isOnline] = useState(true);
+  const { markets, loading, error, marketStats, refetchMarkets, filterMarkets } = useEnhancedMarketData();
   const { isConnected } = useWallet();
 
   // Memoized filtered markets
@@ -44,31 +44,32 @@ const Marketplace = () => {
         if (searchFilters.query) {
           const query = searchFilters.query.toLowerCase();
           matches = matches && (
-            market.borrower.name.toLowerCase().includes(query) ||
-            market.project.title.toLowerCase().includes(query) ||
-            market.project.tags.some(tag => tag.toLowerCase().includes(query))
+            market.borrowerProfile.githubHandle.toLowerCase().includes(query) ||
+            market.projectData.title.toLowerCase().includes(query) ||
+            market.projectData.tags.some(tag => tag.toLowerCase().includes(query))
           );
         }
         
         if (searchFilters.minAmount) {
-          matches = matches && market.loan.amount >= searchFilters.minAmount;
+          matches = matches && market.loanAmount >= searchFilters.minAmount;
         }
         
         if (searchFilters.maxAmount) {
-          matches = matches && market.loan.amount <= searchFilters.maxAmount;
+          matches = matches && market.loanAmount <= searchFilters.maxAmount;
         }
         
         if (searchFilters.minTrustScore) {
-          matches = matches && market.borrower.trustScore >= searchFilters.minTrustScore;
+          matches = matches && market.borrowerProfile.trustScore >= searchFilters.minTrustScore;
+        }
+        
+        if (searchFilters.riskCategory && searchFilters.riskCategory.length > 0) {
+          matches = matches && searchFilters.riskCategory.includes(market.borrowerProfile.riskCategory);
         }
         
         if (searchFilters.status && searchFilters.status.length > 0) {
-          matches = matches && searchFilters.status.includes(market.loan.status);
-        }
-        
-        if (searchFilters.sectors && searchFilters.sectors.length > 0) {
-          matches = matches && searchFilters.sectors.some(sector => 
-            market.project.tags.includes(sector)
+          const statusMap = { 'funding': 0, 'active': 1, 'repaid': 2, 'defaulted': 3 };
+          matches = matches && searchFilters.status.some((status: string) => 
+            statusMap[status as keyof typeof statusMap] === market.currentState
           );
         }
         
@@ -81,15 +82,12 @@ const Marketplace = () => {
   }, [markets, searchFilters]);
 
   const handleFiltersChange = useCallback(async (filters: any) => {
-    console.log('Filters changed:', filters);
+    console.log('Enhanced filters changed:', filters);
     setSearchFilters(filters);
-    
-    // Optionally use the service filter if you want server-side filtering
-    // await filterMarkets(filters);
   }, []);
 
   const handleFiltersReset = useCallback(() => {
-    console.log('Filters reset');
+    console.log('Enhanced filters reset');
     setSearchFilters({});
   }, []);
 
@@ -118,7 +116,7 @@ const Marketplace = () => {
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">Loan Marketplace</h1>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Enhanced Loan Marketplace</h1>
               <div className="flex items-center space-x-2">
                 <p className="text-slate-600">Loading markets...</p>
                 <Wifi className="h-4 w-4 text-green-600" />
@@ -210,9 +208,9 @@ const Marketplace = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900 mb-2">Loan Marketplace</h1>
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">Enhanced Loan Marketplace</h1>
                 <p className="text-slate-600">
-                  Discover isolated lending markets created by verified developers with fixed rates and clear terms
+                  AI-powered risk assessment • Trust-based lending • NFT positions • Secondary trading
                 </p>
               </div>
               <div className="flex items-center space-x-2">
@@ -235,8 +233,8 @@ const Marketplace = () => {
             />
           </div>
 
-          {/* Market Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {/* Enhanced Market Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Markets</CardTitle>
@@ -258,20 +256,20 @@ const Marketplace = () => {
               <CardContent>
                 <div className="text-2xl font-bold">${(marketStats.totalRequested / 1000).toFixed(0)}K</div>
                 <p className="text-xs text-muted-foreground">
-                  Across all markets
+                  ${(marketStats.totalStaked / 1000).toFixed(0)}K staked as collateral
                 </p>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg Interest Rate</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Avg Trust Score</CardTitle>
+                <Shield className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{marketStats.avgInterestRate.toFixed(1)}%</div>
+                <div className="text-2xl font-bold">{marketStats.avgTrustScore.toFixed(0)}</div>
                 <p className="text-xs text-muted-foreground">
-                  Fixed APR
+                  {marketStats.avgInterestRate.toFixed(1)}% avg interest rate
                 </p>
               </CardContent>
             </Card>
@@ -279,24 +277,24 @@ const Marketplace = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-                <Star className="h-4 w-4 text-muted-foreground" />
+                <Target className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{marketStats.successRate}%</div>
+                <div className="text-2xl font-bold">{marketStats.successRate.toFixed(1)}%</div>
                 <p className="text-xs text-muted-foreground">
-                  Successful repayments
+                  Loan repayment success rate
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Loan Markets */}
+          {/* Enhanced Loan Markets */}
           <div className="space-y-6">
             {loading && filteredMarkets.length > 0 && (
               <div className="text-center py-2">
                 <div className="inline-flex items-center text-sm text-blue-600">
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Refreshing market data...
+                  Refreshing enhanced market data...
                 </div>
               </div>
             )}
@@ -314,7 +312,7 @@ const Marketplace = () => {
             <div className="text-center py-12">
               <div className="text-slate-500 mb-4">
                 {markets.length === 0 
-                  ? "No markets available" 
+                  ? "No enhanced markets available" 
                   : "No markets found matching your criteria"
                 }
               </div>
