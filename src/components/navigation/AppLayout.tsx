@@ -6,6 +6,7 @@ import NavigationHeader from "./NavigationHeader";
 import NavigationBreadcrumb from "./NavigationBreadcrumb";
 import NavigationSidebar from "./NavigationSidebar";
 import EnhancedMobileNavigation from "./EnhancedMobileNavigation";
+import { BrowseModeIndicator } from "@/components/BrowseModeIndicator";
 
 interface BreadcrumbItem {
   label: string;
@@ -77,6 +78,9 @@ const AppLayoutContent = ({
           onMenuToggle={toggleSidebar}
           showMenuButton={showSidebar}
         />
+
+        {/* Browse Mode Indicator */}
+        <BrowseModeIndicator />
 
         {/* Breadcrumb - Only show on desktop when sidebar is present */}
         {breadcrumbItems && (

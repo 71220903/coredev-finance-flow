@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,8 @@ import AdvancedSearch from "@/components/AdvancedSearch";
 import { SkeletonLoader } from "@/components/ui/skeleton-loader";
 import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import { NotificationSystem } from "@/components/notifications/NotificationSystem";
+import { TransactionGate } from "@/components/TransactionGate";
+import { BrowseModeIndicator } from "@/components/BrowseModeIndicator";
 import { 
   DollarSign,
   TrendingUp,
@@ -48,26 +49,30 @@ const Marketplace = () => {
     };
   }, []);
 
-  // Set up real-time event listeners with performance tracking
+  // Set up real-time event listeners with performance tracking - only if connected
   useMarketEvents({
     onMarketCreated: useCallback((borrower, marketAddress, projectCID) => {
+      if (!isConnected) return;
       startTiming('market-refresh');
       console.log('New market created, refreshing data...', { borrower, marketAddress, projectCID });
       refetchMarkets();
       endTiming('market-refresh');
-    }, [refetchMarkets, startTiming, endTiming]),
+    }, [refetchMarkets, startTiming, endTiming, isConnected]),
     onDeposited: useCallback((marketAddress, lender, amount) => {
+      if (!isConnected) return;
       console.log('Deposit detected, refreshing market...', { marketAddress, lender, amount });
       refreshMarket(marketAddress);
-    }, [refreshMarket]),
+    }, [refreshMarket, isConnected]),
     onLoanStarted: useCallback((marketAddress, startTime, fundingAmount) => {
+      if (!isConnected) return;
       console.log('Loan started, refreshing market...', { marketAddress, startTime, fundingAmount });
       refreshMarket(marketAddress);
-    }, [refreshMarket]),
+    }, [refreshMarket, isConnected]),
     onLoanRepaid: useCallback((marketAddress, totalAmount) => {
+      if (!isConnected) return;
       console.log('Loan repaid, refreshing market...', { marketAddress, totalAmount });
       refreshMarket(marketAddress);
-    }, [refreshMarket])
+    }, [refreshMarket, isConnected])
   });
 
   // Memoized market transformation with error handling
@@ -350,18 +355,19 @@ const Marketplace = () => {
                 </Link>
                 <NotificationSystem />
                 <WalletConnect />
-                <CreateMarketModal 
-                  trigger={
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Market
-                    </Button>
-                  }
-                />
+                <TransactionGate action="Create Market" description="To create a lending market, you need to connect your wallet.">
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Market
+                  </Button>
+                </TransactionGate>
               </div>
             </div>
           </div>
         </nav>
+
+        {/* Browse Mode Indicator */}
+        <BrowseModeIndicator />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
@@ -499,4 +505,3 @@ const Marketplace = () => {
 };
 
 export default Marketplace;
-

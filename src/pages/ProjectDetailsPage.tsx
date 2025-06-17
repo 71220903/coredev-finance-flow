@@ -1,8 +1,11 @@
+
 import ProjectDataRoom from "@/components/ProjectDataRoom";
 import TrustScoreWidget from "@/components/TrustScoreWidget";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Github, User } from "lucide-react";
+import { TransactionGate } from "@/components/TransactionGate";
+import { BrowseModeIndicator } from "@/components/BrowseModeIndicator";
+import { ArrowLeft, Github, User, Bookmark, Share2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { WalletConnect } from "@/components/WalletConnect";
 
@@ -50,6 +53,9 @@ const ProjectDetailsPage = () => {
         </div>
       </nav>
 
+      {/* Browse Mode Indicator */}
+      <BrowseModeIndicator />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
@@ -96,13 +102,19 @@ const ProjectDetailsPage = () => {
                 <CardTitle className="text-lg">Investment Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full" size="lg">
-                  Fund This Project
-                </Button>
+                <TransactionGate action="Fund This Project" description="To fund this project, you need to connect your wallet to make transactions.">
+                  <Button className="w-full" size="lg">
+                    Fund This Project
+                  </Button>
+                </TransactionGate>
+                
                 <Button variant="outline" className="w-full">
+                  <Bookmark className="h-4 w-4 mr-2" />
                   Save to Watchlist
                 </Button>
+                
                 <Button variant="ghost" className="w-full">
+                  <Share2 className="h-4 w-4 mr-2" />
                   Share Project
                 </Button>
               </CardContent>
