@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+
+import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoanMarketCard from "@/components/LoanMarketCard";
@@ -21,109 +22,22 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { WalletConnect } from "@/components/WalletConnect";
-import { useMarketData } from "@/hooks/useMarketData";
-import { useMarketEvents } from "@/hooks/useMarketEvents";
+import { useMockMarketData } from "@/hooks/useMockMarketData";
 import { useWallet } from "@/hooks/useWallet";
-import { useContract } from "@/hooks/useContract";
-import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 
 const Marketplace = () => {
-  const { metrics, startTiming, endTiming } = usePerformanceMonitor('Marketplace');
   const [searchFilters, setSearchFilters] = useState<any>({});
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const { markets, loading, error, refreshMarket, refetchMarkets } = useMarketData();
-  const { isConnected, address } = useWallet();
-  const { isReady } = useContract();
-
-  // Online/offline detection
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // Set up real-time event listeners with performance tracking - only if connected
-  useMarketEvents({
-    onMarketCreated: useCallback((borrower, marketAddress, projectCID) => {
-      if (!isConnected) return;
-      startTiming('market-refresh');
-      console.log('New market created, refreshing data...', { borrower, marketAddress, projectCID });
-      refetchMarkets();
-      endTiming('market-refresh');
-    }, [refetchMarkets, startTiming, endTiming, isConnected]),
-    onDeposited: useCallback((marketAddress, lender, amount) => {
-      if (!isConnected) return;
-      console.log('Deposit detected, refreshing market...', { marketAddress, lender, amount });
-      refreshMarket(marketAddress);
-    }, [refreshMarket, isConnected]),
-    onLoanStarted: useCallback((marketAddress, startTime, fundingAmount) => {
-      if (!isConnected) return;
-      console.log('Loan started, refreshing market...', { marketAddress, startTime, fundingAmount });
-      refreshMarket(marketAddress);
-    }, [refreshMarket, isConnected]),
-    onLoanRepaid: useCallback((marketAddress, totalAmount) => {
-      if (!isConnected) return;
-      console.log('Loan repaid, refreshing market...', { marketAddress, totalAmount });
-      refreshMarket(marketAddress);
-    }, [refreshMarket, isConnected])
-  });
-
-  // Memoized market transformation with error handling
-  const transformedMarkets = useMemo(() => {
-    startTiming('market-transform');
-    
-    const result = markets.map(market => {
-      try {
-        return {
-          id: market.contractAddress,
-          borrower: {
-            name: market.borrowerProfile?.name || 'Unknown Developer',
-            githubHandle: market.borrowerProfile?.githubHandle || '@unknown',
-            avatar: market.borrowerProfile?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
-            trustScore: market.borrowerProfile?.trustScore || 50,
-            trustBreakdown: { github: 25, codeQuality: 15, community: 10, onChain: 0 }
-          },
-          project: {
-            title: market.projectData?.title || 'Untitled Project',
-            description: market.projectData?.description || 'No description available',
-            tags: market.projectData?.tags || ['Development']
-          },
-          loan: {
-            amount: parseFloat(market.loanAmount) || 0,
-            interestRate: (market.interestRateBps || 0) / 100,
-            tenor: `${Math.floor((market.tenorSeconds || 0) / (24 * 60 * 60))} days`,
-            tenorDays: Math.floor((market.tenorSeconds || 0) / (24 * 60 * 60)),
-            funded: market.currentState === 0 ? 
-              Math.min(100, (parseFloat(market.totalDeposited || '0') / parseFloat(market.loanAmount || '1')) * 100) : 100,
-            target: parseFloat(market.loanAmount) || 0,
-            status: market.currentState === 0 ? 'funding' as const : 
-                    market.currentState === 1 ? 'active' as const : 
-                    market.currentState === 2 ? 'repaid' as const : 'defaulted' as const,
-            timeLeft: market.currentState === 0 ? 'TBD' : undefined,
-            startDate: market.currentState >= 1 ? 'Recently' : undefined,
-            dueDate: market.currentState >= 1 ? 'Future' : undefined
-          }
-        };
-      } catch (error) {
-        console.error('Error transforming market data:', error, market);
-        return null;
-      }
-    }).filter(market => market !== null);
-
-    endTiming('market-transform');
-    return result;
-  }, [markets, startTiming, endTiming]);
+  const [isOnline] = useState(true); // Mock online status
+  const { markets, loading, error, marketStats, refetchMarkets, filterMarkets } = useMockMarketData();
+  const { isConnected } = useWallet();
 
   // Memoized filtered markets
   const filteredMarkets = useMemo(() => {
-    return transformedMarkets.filter(market => {
+    if (Object.keys(searchFilters).length === 0) {
+      return markets;
+    }
+
+    return markets.filter(market => {
       try {
         let matches = true;
         
@@ -164,94 +78,20 @@ const Marketplace = () => {
         return false;
       }
     });
-  }, [transformedMarkets, searchFilters]);
+  }, [markets, searchFilters]);
 
-  // Memoized stats calculation
-  const marketStats = useMemo(() => {
-    const totalRequested = transformedMarkets.reduce((sum, market) => {
-      try {
-        return sum + (market.loan.amount || 0);
-      } catch (error) {
-        console.error('Error calculating total requested:', error);
-        return sum;
-      }
-    }, 0);
-
-    const avgInterestRate = transformedMarkets.length > 0 
-      ? transformedMarkets.reduce((sum, market) => {
-          try {
-            return sum + (market.loan.interestRate || 0);
-          } catch (error) {
-            console.error('Error calculating interest rate:', error);
-            return sum;
-          }
-        }, 0) / transformedMarkets.length
-      : 0;
-
-    const successRate = transformedMarkets.length > 0
-      ? Math.round((transformedMarkets.filter(m => m.loan.status === 'repaid').length / transformedMarkets.length) * 100)
-      : 0;
-
-    return { totalRequested, avgInterestRate, successRate };
-  }, [transformedMarkets]);
-
-  const handleFiltersChange = useCallback((filters: any) => {
+  const handleFiltersChange = useCallback(async (filters: any) => {
     console.log('Filters changed:', filters);
     setSearchFilters(filters);
+    
+    // Optionally use the service filter if you want server-side filtering
+    // await filterMarkets(filters);
   }, []);
 
   const handleFiltersReset = useCallback(() => {
     console.log('Filters reset');
     setSearchFilters({});
   }, []);
-
-  // Connection status monitoring
-  useEffect(() => {
-    console.log('Marketplace - Connection status:', { 
-      isConnected, 
-      address, 
-      isReady, 
-      marketsCount: markets.length,
-      isOnline 
-    });
-  }, [isConnected, address, isReady, markets.length, isOnline]);
-
-  // Show connection prompt if not connected
-  if (!isConnected) {
-    return (
-      <ErrorBoundary>
-        <div className="min-h-screen bg-slate-50">
-          {/* Navigation */}
-          <nav className="bg-white border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-16">
-                <Link to="/" className="flex items-center space-x-2">
-                  <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">CD</span>
-                  </div>
-                  <span className="text-xl font-bold text-slate-900">CoreDev Zero</span>
-                </Link>
-                <div className="flex items-center space-x-4">
-                  <NotificationSystem />
-                  <WalletConnect />
-                </div>
-              </div>
-            </div>
-          </nav>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="text-center py-20">
-              <h1 className="text-3xl font-bold text-slate-900 mb-4">Connect Your Wallet</h1>
-              <p className="text-slate-600 mb-8">
-                Please connect your wallet to view and interact with loan markets
-              </p>
-              <WalletConnect />
-            </div>
-          </div>
-        </div>
-      </ErrorBoundary>
-    );
-  }
 
   // Show loading state with skeleton
   if (loading && markets.length === 0) {
@@ -280,12 +120,8 @@ const Marketplace = () => {
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-slate-900 mb-2">Loan Marketplace</h1>
               <div className="flex items-center space-x-2">
-                <p className="text-slate-600">Loading markets from blockchain...</p>
-                {isOnline ? (
-                  <Wifi className="h-4 w-4 text-green-600" />
-                ) : (
-                  <WifiOff className="h-4 w-4 text-red-600" />
-                )}
+                <p className="text-slate-600">Loading markets...</p>
+                <Wifi className="h-4 w-4 text-green-600" />
               </div>
             </div>
             
@@ -383,14 +219,10 @@ const Marketplace = () => {
                 {loading && (
                   <div className="flex items-center text-sm text-blue-600">
                     <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                    Syncing...
+                    Loading...
                   </div>
                 )}
-                {isOnline ? (
-                  <Wifi className="h-4 w-4 text-green-600" />
-                ) : (
-                  <WifiOff className="h-4 w-4 text-red-600" />
-                )}
+                <Wifi className="h-4 w-4 text-green-600" />
               </div>
             </div>
           </div>
@@ -411,9 +243,9 @@ const Marketplace = () => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{transformedMarkets.length}</div>
+                <div className="text-2xl font-bold">{marketStats.activeMarkets}</div>
                 <p className="text-xs text-muted-foreground">
-                  {transformedMarkets.filter(m => m.loan.status === 'funding').length} seeking funding
+                  {marketStats.fundingMarkets} seeking funding
                 </p>
               </CardContent>
             </Card>
@@ -464,7 +296,7 @@ const Marketplace = () => {
               <div className="text-center py-2">
                 <div className="inline-flex items-center text-sm text-blue-600">
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Updating market data...
+                  Refreshing market data...
                 </div>
               </div>
             )}
@@ -481,16 +313,16 @@ const Marketplace = () => {
           {filteredMarkets.length === 0 && !loading && (
             <div className="text-center py-12">
               <div className="text-slate-500 mb-4">
-                {transformedMarkets.length === 0 
-                  ? "No markets found on the blockchain" 
+                {markets.length === 0 
+                  ? "No markets available" 
                   : "No markets found matching your criteria"
                 }
               </div>
               <div className="space-x-2">
-                {transformedMarkets.length === 0 ? (
+                {markets.length === 0 ? (
                   <Button onClick={refetchMarkets} className="flex items-center space-x-2">
                     <RefreshCw className="h-4 w-4" />
-                    <span>Refresh from Blockchain</span>
+                    <span>Refresh Markets</span>
                   </Button>
                 ) : (
                   <Button variant="outline" onClick={handleFiltersReset}>Clear Filters</Button>
