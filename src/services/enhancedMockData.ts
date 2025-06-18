@@ -1,5 +1,4 @@
-
-import { LoanMarket, MarketState, MarketConditions, RiskAssessment } from '@/types/market';
+import { LoanMarket, MarketState, MarketConditions, RiskAssessment, TokenomicsData } from '@/types/market';
 import { DeveloperProfile, GitHubMetrics, TrustScoreBreakdown } from '@/types/developer';
 import { TrustScoreCalculator } from './trustScoreCalculator';
 
@@ -236,6 +235,17 @@ export class EnhancedMockDataService {
 
     const project = projects[index] || projects[0];
     
+    const tokenomics: TokenomicsData = {
+      totalSupply: 1000000,
+      tokenSymbol: `${project.title.charAt(0)}${project.title.split(' ')[1]?.charAt(0) || 'T'}`,
+      distribution: [
+        { category: "Team", percentage: 20, amount: 200000, description: "Team allocation with vesting" },
+        { category: "Public Sale", percentage: 40, amount: 400000, description: "Public token sale" },
+        { category: "Development", percentage: 30, amount: 300000, description: "Development fund" },
+        { category: "Reserve", percentage: 10, amount: 100000, description: "Emergency reserve" }
+      ]
+    };
+    
     return {
       ...project,
       demoUrl: `https://demo.${project.title.toLowerCase().replace(/\s+/g, '-')}.com`,
@@ -262,7 +272,8 @@ export class EnhancedMockDataService {
           githubHandle: project.githubRepo.split('/')[3],
           experience: "5+ years in Web3 development"
         }
-      ]
+      ],
+      tokenomics
     };
   }
 }

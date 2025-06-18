@@ -1,4 +1,6 @@
 
+import { DeveloperProfile } from './developer';
+
 // Market types matching the smart contract structure
 export interface LoanMarket {
   id: string;
@@ -45,6 +47,28 @@ export interface ProjectData {
   roadmap: ProjectMilestone[];
   team: TeamMember[];
   tokenomics?: TokenomicsData;
+}
+
+export interface TokenomicsData {
+  totalSupply: number;
+  tokenSymbol: string;
+  distribution: TokenDistribution[];
+  vestingSchedule?: VestingSchedule[];
+}
+
+export interface TokenDistribution {
+  category: string;
+  percentage: number;
+  amount: number;
+  description: string;
+}
+
+export interface VestingSchedule {
+  beneficiary: string;
+  amount: number;
+  startDate: number;
+  duration: number;
+  cliffPeriod: number;
 }
 
 export interface ProjectMilestone {
