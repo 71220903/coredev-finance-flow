@@ -131,7 +131,9 @@ export class EnhancedMockDataService {
       this.BASE_INTEREST_RATE
     );
 
-    return {
+    const projectData = this.generateProjectData(index);
+
+    const market: LoanMarket = {
       id: `market-${index + 1}`,
       contractAddress: `0x${(1000000000000000000000000000000000000000 + index).toString(16)}`,
       borrower: developer.address,
@@ -149,7 +151,7 @@ export class EnhancedMockDataService {
       actualStaked: loanAmount * (0.1 + Math.random() * 0.05), // 10-15% staked
       marketConditions,
       borrowerProfile: developer,
-      projectData: this.generateProjectData(index),
+      projectData,
       riskAssessment,
       stakingInfo: {
         requiredStake: loanAmount * 0.1,
@@ -158,8 +160,18 @@ export class EnhancedMockDataService {
         lockedUntil: Date.now() + tenorDays * 86400000,
         slashingRisk: 0.15,
         rewards: loanAmount * 0.02
+      },
+      // Legacy compatibility fields
+      project: projectData,
+      loan: {
+        amount: loanAmount,
+        interestRate: suggestedRate,
+        tenor: tenorDays,
+        state: index < 2 ? MarketState.FUNDING : index < 4 ? MarketState.ACTIVE : MarketState.REPAID
       }
     };
+
+    return market;
   }
 
   private static generateRiskAssessment(developer: DeveloperProfile): RiskAssessment {

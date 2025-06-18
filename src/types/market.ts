@@ -27,6 +27,15 @@ export interface LoanMarket {
   projectData: ProjectData;
   riskAssessment: RiskAssessment;
   stakingInfo: StakingInfo;
+
+  // Legacy compatibility fields (if LoanMarketCard expects these)
+  project?: ProjectData;
+  loan?: {
+    amount: number;
+    interestRate: number;
+    tenor: number;
+    state: number;
+  };
 }
 
 export enum MarketState {
