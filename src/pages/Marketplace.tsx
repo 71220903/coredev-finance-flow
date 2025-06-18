@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,17 @@ const Marketplace = () => {
   const transformMarketData = useCallback((market: LoanMarket) => {
     const fundedPercentage = (market.totalDeposited / market.loanAmount) * 100;
     
+    // Properly type the status based on market state
+    const getStatus = (state: number): 'funding' | 'active' | 'repaid' | 'defaulted' => {
+      switch (state) {
+        case 0: return 'funding';
+        case 1: return 'active';
+        case 2: return 'repaid';
+        case 3: return 'defaulted';
+        default: return 'defaulted';
+      }
+    };
+    
     return {
       id: market.id,
       borrower: {
@@ -62,9 +74,7 @@ const Marketplace = () => {
         tenorDays: Math.floor(market.tenorSeconds / 86400),
         funded: fundedPercentage,
         target: market.loanAmount,
-        status: market.currentState === 0 ? 'funding' : 
-                market.currentState === 1 ? 'active' : 
-                market.currentState === 2 ? 'repaid' : 'defaulted',
+        status: getStatus(market.currentState),
         timeLeft: market.currentState === 0 ? `${Math.floor((market.fundingDeadline - Date.now()) / (1000 * 60 * 60 * 24))} days` : undefined,
         startDate: market.currentState >= 1 ? new Date(market.createdAt).toLocaleDateString() : undefined,
         dueDate: market.currentState >= 1 ? new Date(market.createdAt + market.tenorSeconds * 1000).toLocaleDateString() : undefined
