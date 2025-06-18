@@ -24,6 +24,8 @@ interface GasPrice {
   instant: number;
 }
 
+type SpeedOption = keyof GasPrice | 'custom';
+
 interface GasEstimate {
   gasLimit: number;
   gasPrice: number;
@@ -50,7 +52,7 @@ export const GasOptimizer = ({
     instant: 50
   });
   
-  const [selectedSpeed, setSelectedSpeed] = useState<keyof GasPrice>('standard');
+  const [selectedSpeed, setSelectedSpeed] = useState<SpeedOption>('standard');
   const [customGasPrice, setCustomGasPrice] = useState(25);
   const [customGasLimit, setCustomGasLimit] = useState(gasLimit);
   const [networkCongestion, setNetworkCongestion] = useState(0.7); // 0-1 scale
@@ -70,34 +72,36 @@ export const GasOptimizer = ({
     return () => clearInterval(interval);
   }, []);
 
-  const getGasEstimate = (speed: keyof GasPrice): GasEstimate => {
-    const gasPrice = speed === 'custom' ? customGasPrice : gasPrices[speed];
+  const getGasEstimate = (speed: SpeedOption): GasEstimate => {
+    const gasPrice = speed === 'custom' ? customGasPrice : gasPrices[speed as keyof GasPrice];
     const adjustedGasLimit = speed === 'custom' ? customGasLimit : gasLimit;
     
     const totalCost = ethers.formatEther(
       ethers.parseUnits(gasPrice.toString(), 'gwei') * BigInt(adjustedGasLimit)
     );
 
-    const executionTimes = {
+    const executionTimes: Record<SpeedOption, string> = {
       slow: '5-10 minutes',
       standard: '2-3 minutes',
       fast: '30-60 seconds',
-      instant: '15-30 seconds'
+      instant: '15-30 seconds',
+      custom: '1-2 minutes'
     };
 
-    const confidenceLevels = {
+    const confidenceLevels: Record<SpeedOption, number> = {
       slow: 95,
       standard: 85,
       fast: 75,
-      instant: 60
+      instant: 60,
+      custom: 80
     };
 
     return {
       gasLimit: adjustedGasLimit,
       gasPrice,
       totalCost,
-      executionTime: executionTimes[speed] || '1-2 minutes',
-      confidence: confidenceLevels[speed] || 80
+      executionTime: executionTimes[speed],
+      confidence: confidenceLevels[speed]
     };
   };
 
@@ -111,11 +115,13 @@ export const GasOptimizer = ({
 
   const handleCustomGasChange = (gasPrice: number[]) => {
     setCustomGasPrice(gasPrice[0]);
+    setSelectedSpeed('custom');
     onGasConfigChange(gasPrice[0], customGasLimit);
   };
 
   const handleCustomLimitChange = (gasLimit: number[]) => {
     setCustomGasLimit(gasLimit[0]);
+    setSelectedSpeed('custom');
     onGasConfigChange(customGasPrice, gasLimit[0]);
   };
 
