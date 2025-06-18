@@ -24,12 +24,53 @@ import { Link } from "react-router-dom";
 import { WalletConnect } from "@/components/WalletConnect";
 import { useEnhancedMarketData } from "@/hooks/useEnhancedMarketData";
 import { useWallet } from "@/hooks/useWallet";
+import { LoanMarket } from "@/types/market";
 
 const Marketplace = () => {
   const [searchFilters, setSearchFilters] = useState<any>({});
   const [isOnline] = useState(true);
   const { markets, loading, error, marketStats, refetchMarkets, filterMarkets } = useEnhancedMarketData();
   const { isConnected } = useWallet();
+
+  // Transform enhanced market data to LoanMarketCard format
+  const transformMarketData = useCallback((market: LoanMarket) => {
+    const fundedPercentage = (market.totalDeposited / market.loanAmount) * 100;
+    
+    return {
+      id: market.id,
+      borrower: {
+        name: market.borrowerProfile.githubHandle || 'Unknown Developer',
+        githubHandle: `@${market.borrowerProfile.githubHandle}`,
+        avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face`,
+        trustScore: market.borrowerProfile.trustScore,
+        trustBreakdown: {
+          github: Math.floor(market.borrowerProfile.trustScore * 0.3),
+          codeQuality: Math.floor(market.borrowerProfile.trustScore * 0.25),
+          community: Math.floor(market.borrowerProfile.trustScore * 0.25),
+          onChain: Math.floor(market.borrowerProfile.trustScore * 0.2)
+        }
+      },
+      project: {
+        title: market.projectData.title,
+        description: market.projectData.description,
+        tags: market.projectData.tags
+      },
+      loan: {
+        amount: market.loanAmount,
+        interestRate: market.suggestedInterestRate,
+        tenor: `${Math.floor(market.tenorSeconds / 86400)} days`,
+        tenorDays: Math.floor(market.tenorSeconds / 86400),
+        funded: fundedPercentage,
+        target: market.loanAmount,
+        status: market.currentState === 0 ? 'funding' : 
+                market.currentState === 1 ? 'active' : 
+                market.currentState === 2 ? 'repaid' : 'defaulted',
+        timeLeft: market.currentState === 0 ? `${Math.floor((market.fundingDeadline - Date.now()) / (1000 * 60 * 60 * 24))} days` : undefined,
+        startDate: market.currentState >= 1 ? new Date(market.createdAt).toLocaleDateString() : undefined,
+        dueDate: market.currentState >= 1 ? new Date(market.createdAt + market.tenorSeconds * 1000).toLocaleDateString() : undefined
+      }
+    };
+  }, []);
 
   // Memoized filtered markets
   const filteredMarkets = useMemo(() => {
@@ -302,7 +343,7 @@ const Marketplace = () => {
             {filteredMarkets.map((market) => (
               <LoanMarketCard 
                 key={market.id} 
-                market={market}
+                market={transformMarketData(market)}
                 userRole="lender"
               />
             ))}

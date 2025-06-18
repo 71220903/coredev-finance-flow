@@ -1,3 +1,4 @@
+
 import { LoanMarket, MarketState, MarketConditions, RiskAssessment, TokenomicsData } from '@/types/market';
 import { DeveloperProfile, GitHubMetrics, TrustScoreBreakdown } from '@/types/developer';
 import { TrustScoreCalculator } from './trustScoreCalculator';
@@ -161,7 +162,7 @@ export class EnhancedMockDataService {
         slashingRisk: 0.15,
         rewards: loanAmount * 0.02
       },
-      // Legacy compatibility fields
+      // Legacy compatibility fields for LoanMarketCard
       project: projectData,
       loan: {
         amount: loanAmount,
